@@ -122,37 +122,49 @@ details {
   display: block;
 }
 
-details summary {
-  cursor: pointer;
-  color: #176863;
-  font-weight: 700;
-  margin-bottom: 0.2rem;
-}
-
-details[open] summary {
-  margin-bottom: 0.35rem;
-}
-
-@media print {
-  .noprint { display: none !important; }
-  body { background: #fff; }
-  .page { max-width: 100%; padding: 0; }
-}
-
-@media (max-width: 900px) {
-  .header {
-    direction: rtl;
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "text"
-      "logo"
-      "side";
-    text-align: center;
-    gap: 0.45rem;
+  body {
+    background: white;
   }
-  .moe-logo { width: 220px; max-height: 125px; }
-  .header-main { text-align: center; }
-  .line-editable { justify-content: center; }
-  .header-main .line { font-size: 1rem; justify-content: center; }
-  .left-col .line, .header-actions { justify-content: center; text-align: center; }
+
+  .page {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+  }
+
+  .header, .toolbar, .noprint {
+    display: none !important;
+  }
+  
+  /* إخفاء الأزرار التفاعلية وجعل الجدول بسيط */
+  details > summary {
+    list-style: none;
+    display: none;
+  }
+  
+  details[open] summary ~ * {
+    animation: none;
+  }
+  
+  details {
+    display: block !important;
+  }
+  
+  /* تعديل الخطوط للطباعة */
+  table {
+    font-size: 10px;
+    width: 100%;
+  }
+
+  th, td {
+    padding: 4px;
+    border: 1px solid #ccc;
+  }
+  
+  /* إجبار الخلفيات الملونة على الظهور */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 }

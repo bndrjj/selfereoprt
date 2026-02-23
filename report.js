@@ -1,3 +1,5 @@
+/* استبدل محتوى report.js الحالي بهذا الكود */
+
 const indicators = [
   { domain: 'الإدارة المدرسية', standard: 'التخطيط', code: '1-1-1-1', text: 'تضع المدرسة خطة تشغيلية مكتملة العناصر وفق أهداف تطويرية محددة.', evidence: 'وجود خطة تشغيلية، يشارك فيها الكادر التعليمي، تتضمن (الرؤية والرسالة والقيم – أهداف – مبادرات نوعية – برامج وأنشطة متنوعة).', docs: 'وثيقة الخطة التشغيلية (شاملة التحليل الرباعي SWOT، الأهداف التشغيلية والفرعية، الإجراءات، الجداول الزمنية، والموارد المالية والبشرية).' },
   { domain: 'الإدارة المدرسية', standard: 'التخطيط', code: '1-1-1-2', text: 'تتابع المدرسة تنفيذ خطتها وتطورها بما يضمن تحقيق أهدافها.', evidence: 'إجراءات واضحة، الأدوار والمسؤوليات محددة، توافر مؤشرات لمتابعة تقدم البرامج والأنشطة، تحديد المشكلات والتحديات عند التنفيذ، تقدم الحلول.', docs: 'سجلات متابعة الخطة التشغيلية (لتحديد البرامج المنفذة وغير المنفذة ومؤشرات الإنجاز).' },
@@ -100,7 +102,6 @@ function editHeaderValue(key, label) {
   save();
   renderHeaderMeta();
 }
-
 
 function rowState(code) {
   return state.rows[code] || {
@@ -253,23 +254,273 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   location.reload();
 });
 
+// =========================================================
+//  هذا هو الجزء المسؤول عن توليد التقرير الاحترافي الجديد
+// =========================================================
 document.getElementById('exportBtn').addEventListener('click', () => {
   const items = getFilteredIndicators();
+  const completed = items.filter((i) => rowState(i.code).status === 'مكتمل').length;
+  const inProgress = items.filter((i) => rowState(i.code).status === 'قيد التنفيذ').length;
+  const pending = items.filter((i) => rowState(i.code).status === 'لم يبدأ').length;
+  const completionRate = items.length ? Math.round((completed / items.length) * 100) : 0;
+  const exportDate = todayAr();
+
+  let lastStandard = null;
+  const rowsHtml = items.map((item) => {
+    const current = rowState(item.code);
+    
+    // صف المعيار كعنوان فاصل
+    let standardRow = '';
+    if (item.standard !== lastStandard) {
+        standardRow = `
+            <tr class="row-standard">
+                <td colspan="7">المعيار: ${esc(item.standard)}</td>
+            </tr>
+        `;
+        lastStandard = item.standard;
+    }
+
+    return `
+      ${standardRow}
+      <tr>
+        <td class="col-indicator">
+            <div class="code-box">${esc(item.code)}</div>
+            <div class="ind-text">${esc(item.text)}</div>
+        </td>
+        <td class="col-evidence small-text">${esc(item.evidence)}</td>
+        <td class="col-docs small-text">${esc(item.docs)}</td>
+        <td class="center-text">${esc(current.status)}</td>
+        <td class="center-text">${esc(current.availability)}</td>
+        <td class="center-text">${esc(current.selfEval)}</td>
+        <td class="col-notes small-text">${esc(current.notes || '-')}</td>
+      </tr>
+    `;
+  }).join('');
+
   const popup = window.open('', '_blank', 'width=1400,height=900');
   if (!popup) return;
+  
   popup.document.write(`
-    <html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير التصدير</title>
-    <style>body{font-family:Tajawal,sans-serif;padding:16px;background:#f6f8f7;color:#155a55}table{width:100%;border-collapse:collapse}th,td{border:1px solid #bcd2ce;padding:7px;vertical-align:top;font-size:13px}th{background:#1a8079;color:#fff}</style>
-    </head><body>
-    <h2>تقرير التصدير - استمارة التحقق</h2>
-    <p>المجال: ${esc(state.filterDomain)} | المعيار: ${esc(state.filterStandard)}</p>
-    <table><thead><tr><th>المجال</th><th>المعيار</th><th>رقم ونص المؤشر</th><th>حالة الإنجاز</th><th>توفر الشواهد والوثائق</th><th>التقييم الذاتي</th><th>المسؤول</th><th>ملاحظات التحسين</th></tr></thead>
-    <tbody>
-      ${items.map((item) => {
-        const current = rowState(item.code);
-        return `<tr><td>${esc(item.domain)}</td><td>${esc(item.standard)}</td><td>(${esc(item.code)}) ${esc(item.text)}</td><td>${esc(current.status)}</td><td>${esc(current.availability)}</td><td>${esc(current.selfEval)}</td><td>${esc(current.owner || '-')}</td><td>${esc(current.notes || '-')}</td></tr>`;
-      }).join('')}
-    </tbody></table></body></html>
+    <html lang="ar" dir="rtl">
+    <head>
+    <meta charset="UTF-8">
+    <title>تقرير الاعتماد المدرسي</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+      @page { size: A4 landscape; margin: 10mm; }
+      :root {
+        --teal-dark: #0e5f59;
+        --teal-med: #136c65;
+        --teal-light: #eaf6f4;
+        --border-color: #bad1ce;
+        --text-dark: #1a4240;
+      }
+      * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      body { 
+          font-family: 'Tajawal', sans-serif; 
+          margin: 0; 
+          background: #fff; 
+          color: var(--text-dark);
+          font-size: 11px; /* تصغير الخط لاستيعاب المحتوى */
+      }
+      
+      .sheet { width: 100%; padding: 0; }
+
+      /* --- Header --- */
+      .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid var(--teal-dark);
+        padding-bottom: 15px;
+        margin-bottom: 15px;
+      }
+      .header-side { text-align: center; width: 250px; }
+      .header-side h3 { margin: 0; font-size: 14px; color: var(--teal-dark); font-weight: 800; line-height: 1.6; }
+      .header-side p { margin: 2px 0; font-size: 12px; font-weight: 600; }
+      
+      .logo-box img { width: 140px; height: auto; }
+
+      /* --- Info Bar (like the reference image) --- */
+      .info-bar {
+          display: flex;
+          background: #fff;
+          border: 1px solid var(--border-color);
+          border-radius: 12px;
+          margin-bottom: 15px;
+          overflow: hidden;
+      }
+      .info-item {
+          flex: 1;
+          padding: 8px 15px;
+          border-left: 1px solid var(--border-color);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+      }
+      .info-item:last-child { border-left: none; }
+      .info-label { font-size: 10px; color: #666; font-weight: 700; margin-bottom: 2px; }
+      .info-val { font-size: 13px; color: var(--teal-dark); font-weight: 800; }
+      
+      .progress-box { background: var(--teal-light); }
+
+      /* --- Table --- */
+      table { 
+          width: 100%; 
+          border-collapse: collapse; 
+          border: 1px solid var(--border-color);
+          table-layout: fixed; /* تثبيت العرض لمنع التمدد */
+      }
+      
+      th {
+          background-color: var(--teal-med);
+          color: #fff;
+          padding: 8px 5px;
+          font-size: 11px;
+          font-weight: 700;
+          border: 1px solid #0b4d48;
+          text-align: center;
+      }
+
+      td {
+          padding: 6px 8px;
+          border: 1px solid #dcecea;
+          vertical-align: top;
+          font-size: 11px;
+          line-height: 1.4;
+      }
+
+      /* Row styling */
+      tr:nth-child(even) td { background-color: #fcfdfd; }
+      
+      .row-standard td {
+          background-color: #ebf5f4;
+          color: var(--teal-dark);
+          font-weight: 800;
+          font-size: 12px;
+          border-bottom: 2px solid var(--border-color);
+          padding-top: 10px;
+          padding-bottom: 5px;
+      }
+
+      /* Column Widths (optimized for landscape) */
+      .col-indicator { width: 22%; }
+      .col-evidence  { width: 22%; }
+      .col-docs      { width: 18%; }
+      .col-status    { width: 10%; }
+      .col-avail     { width: 10%; }
+      .col-eval      { width: 6%; }
+      .col-notes     { width: 12%; }
+
+      /* Inner Cell Styling */
+      .code-box {
+          display: inline-block;
+          background: var(--teal-light);
+          color: var(--teal-dark);
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-weight: 800;
+          font-size: 10px;
+          margin-bottom: 4px;
+      }
+      .ind-text { font-weight: 700; color: #222; }
+      
+      .small-text { font-size: 10px; color: #444; }
+      .center-text { text-align: center; vertical-align: middle; font-weight: 600; }
+
+      /* --- Footer --- */
+      .footer-sigs {
+          margin-top: 30px;
+          display: flex;
+          justify-content: space-between;
+          padding: 0 50px;
+          page-break-inside: avoid;
+      }
+      .sig-block {
+          text-align: center;
+          width: 200px;
+      }
+      .sig-title { font-weight: 700; color: var(--teal-dark); margin-bottom: 40px; }
+      .sig-line { border-top: 1px dashed #999; width: 100%; display: block; }
+
+    </style>
+    </head>
+    <body>
+      <main class="sheet">
+        
+        <header class="header-container">
+            <div class="header-side" style="text-align: right;">
+                <h3>المملكة العربية السعودية<br>وزارة التعليم<br>الإدارة العامة للتعليم بالمنطقة الشرقية</h3>
+            </div>
+            <div class="logo-box">
+                <img src="وزارة التعليم.png" alt="Logo">
+            </div>
+            <div class="header-side" style="text-align: left;">
+                <h3>نموذج المتابعة المستمرة<br>تقرير الاعتماد المدرسي</h3>
+                <p>تاريخ الإصدار: ${esc(exportDate)}</p>
+            </div>
+        </header>
+
+        <div class="info-bar">
+            <div class="info-item">
+                <span class="info-label">اسم المدرسة</span>
+                <span class="info-val">${esc(state.schoolName)}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">المجال</span>
+                <span class="info-val">${esc(state.filterDomain)}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">المعيار المختار</span>
+                <span class="info-val">${esc(state.filterStandard)}</span>
+            </div>
+             <div class="info-item">
+                <span class="info-label">عدد المؤشرات</span>
+                <span class="info-val">${items.length}</span>
+            </div>
+            <div class="info-item progress-box">
+                <span class="info-label">نسبة الإنجاز</span>
+                <span class="info-val">${completionRate}%</span>
+            </div>
+        </div>
+
+        ${items.length ? `
+          <table>
+            <thead>
+              <tr>
+                <th class="col-indicator">المؤشر</th>
+                <th class="col-evidence">الشواهد المتوقعة</th>
+                <th class="col-docs">الوثائق</th>
+                <th class="col-status">حالة الإنجاز</th>
+                <th class="col-avail">توفر الأدلة</th>
+                <th class="col-eval">التقييم</th>
+                <th class="col-notes">ملاحظات</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        ` : '<div style="text-align:center; padding: 50px;">لا توجد مؤشرات مطابقة للفلاتر الحالية.</div>'}
+
+        <div class="footer-sigs">
+            <div class="sig-block">
+                <div class="sig-title">قائد/ة المدرسة</div>
+                <span class="sig-line"></span>
+            </div>
+            <div class="sig-block">
+                <div class="sig-title">مشرف/ة الجودة</div>
+                <span class="sig-line"></span>
+            </div>
+        </div>
+
+      </main>
+      <script>
+        // طباعة تلقائية عند الفتح
+        setTimeout(() => { window.print(); }, 1000);
+      </script>
+    </body>
+    </html>
   `);
   popup.document.close();
 });
