@@ -525,6 +525,43 @@ select {
   background: #fbfbf9;
 }
 
+
+.detail-progress-wrap {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 0.9rem;
+}
+
+.indicator-progress-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: min(430px, 100%);
+}
+
+.indicator-progress-track {
+  flex: 1;
+  height: 18px;
+  border-radius: 999px;
+  background: #d5d8dc;
+  overflow: hidden;
+}
+
+.indicator-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #79ab93, #6e9e81);
+}
+
+.indicator-progress-value {
+  font-size: 1.95rem;
+  line-height: 1;
+  color: #1f444a;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
 .indicator-title {
   margin-top: 0;
   font-size: 1.05rem;
@@ -630,5 +667,13 @@ pre {
 
   .focused-grid {
     max-width: 100%;
+  }
+
+  .indicator-progress-summary {
+    min-width: 100%;
+  }
+
+  .indicator-progress-value {
+    font-size: 1.6rem;
   }
 }
