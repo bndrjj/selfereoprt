@@ -61,75 +61,55 @@ body { margin: 0; background: #ecefef; color: #1f4e4a; font-family: "Tajawal", s
 
 .summary { border: 1px solid var(--line); border-radius: 12px; background: #f7fbfa; padding: 0.5rem 0.7rem; margin-bottom: 0.6rem; font-weight: 700; color: #206862; display: flex; gap: 1.2rem; flex-wrap: wrap; }
 
-.table-wrap { overflow: auto; border: 1px solid #b6ceca; border-radius: 12px; }
-table { width: 100%; border-collapse: collapse; min-width: 1600px; }
-th { background: #197f78; color: #fff; padding: 0.55rem; font-size: 0.92rem; border-left: 1px solid #4f9893; }
-td { background: #f4f9f8; border-bottom: 1px solid #d4e2df; border-left: 1px solid #d8e6e3; padding: 0.45rem; vertical-align: top; font-size: 0.9rem; }
-.indicator-cell { min-width: 300px; font-weight: 700; color: #1c6863; }
-.evidence-cell, .docs-cell { min-width: 330px; line-height: 1.5; }
-
-select.row-select, input.row-input, textarea.row-textarea {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  margin-top: 0.55rem;
-  border: 1px solid #b6ceca;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
+.table-wrap { overflow: auto; border: 1px solid #b6ceca; border-radius: 12px; background: #fff; }
+table { width: 100%; border-collapse: collapse; min-width: 1500px; table-layout: fixed; }
 th {
   background: #197f78;
   color: #fff;
   padding: 0.65rem 0.5rem;
+  font-size: 0.9rem;
   font-weight: 700;
   border-left: 1px solid #4f9893;
+  text-align: center;
 }
 th:last-child { border-left: 0; }
-
 td {
   border-bottom: 1px solid #d4e2df;
   border-left: 1px solid #d8e6e3;
-  padding: 0.45rem 0.5rem;
+  padding: 0.5rem;
+  vertical-align: top;
+  font-size: 0.88rem;
   text-align: center;
-  font-weight: 500;
   background: #f4f9f8;
-  transition: background 0.3s ease;
+  line-height: 1.45;
+  word-break: break-word;
 }
+tbody tr:nth-child(even) td { background: #f8fbfa; }
 
-/* ── Row coloring by score level ── */
-tr.score-5 td { background: linear-gradient(90deg, #bbf7d0 0%, #f0fdf4 35%, #f4f9f8 100%); }
-tr.score-4 td { background: linear-gradient(90deg, #dcfce7 0%, #f0fdf4 35%, #f4f9f8 100%); }
-tr.score-3 td { background: linear-gradient(90deg, #e0f2fe 0%, #f0f9ff 35%, #f4f9f8 100%); }
-tr.score-2 td { background: linear-gradient(90deg, #fef3c7 0%, #fffbeb 35%, #f4f9f8 100%); }
-tr.score-1 td { background: linear-gradient(90deg, #fecaca 0%, #fef2f2 35%, #f4f9f8 100%); }
+th:nth-child(1), td:nth-child(1) { width: 9%; }
+th:nth-child(2), td:nth-child(2) { width: 10%; }
+th:nth-child(3), td:nth-child(3) { width: 22%; }
+th:nth-child(4), td:nth-child(4) { width: 16%; }
+th:nth-child(5), td:nth-child(5) { width: 16%; }
+th:nth-child(6), td:nth-child(6) { width: 8%; }
+th:nth-child(7), td:nth-child(7) { width: 8%; }
+th:nth-child(8), td:nth-child(8) { width: 5%; }
+th:nth-child(9), td:nth-child(9) { width: 10%; }
+th:nth-child(10), td:nth-child(10) { width: 16%; }
 
-tr.score-5 td.item-cell { color: #15803d; }
-tr.score-4 td.item-cell { color: #16a34a; }
-tr.score-3 td.item-cell { color: #0369a1; }
-tr.score-2 td.item-cell { color: #b45309; }
-tr.score-1 td.item-cell { color: #dc2626; }
+.indicator-cell { min-width: 300px; font-weight: 700; color: #1c6863; text-align: right; }
+.evidence-cell, .docs-cell { min-width: 320px; text-align: right; }
 
-tr.score-5 .score-select { border-color: #86efac; background: #f0fdf4; }
-tr.score-4 .score-select { border-color: #bbf7d0; background: #f0fdf4; }
-tr.score-3 .score-select { border-color: #bae6fd; background: #f0f9ff; }
-tr.score-2 .score-select { border-color: #fde68a; background: #fffbeb; }
-tr.score-1 .score-select { border-color: #fca5a5; background: #fef2f2; }
-
-td.item-cell {
-  text-align: right;
-  color: #1c6863;
-  font-weight: 700;
-}
-
-.score-select {
-  border: 1px solid #bdd3cf;
+select.row-select, textarea.row-textarea {
+  width: 100%;
+  margin-top: 0.35rem;
+  border: 1px solid #b6ceca;
   border-radius: 8px;
   background: #fff;
   font: inherit;
-  padding: 0.3rem;
+  padding: 0.35rem 0.45rem;
 }
-textarea.row-textarea { min-height: 70px; resize: vertical; }
+textarea.row-textarea { min-height: 62px; resize: vertical; }
 
 .standard-row td {
   background: #dcecea;
