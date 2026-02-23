@@ -1,258 +1,253 @@
-function makeIndicators(prefix) {
-  return [1, 2, 3, 4].map((n) => ({
-    id: `${prefix}.${n}`,
-    title: `مؤشر ${prefix}.${n}: تطبيق الممارسة المهنية المستهدفة`,
-    evidenceGuide: [
-      "ملاحظة صفية أو إدارية موثقة",
-      "نتائج تحليل بيانات الأداء",
-      "نماذج متابعة أو خطط تنفيذ",
-      "مقابلات مع أصحاب المصلحة"
-    ],
-    documentsGuide: [
-      "سياسات وإجراءات معتمدة",
-      "محاضر اجتماعات وتعاميم",
-      "تقارير دورية وتحليلية",
-      "أدلة رقمية أو ورقية داعمة"
-    ]
-  }));
-}
-
 const domains = [
   {
     id: 1,
     name: "الإدارة المدرسية",
     standards: [
-      { id: "1-1", name: "التخطيط", indicators: makeIndicators("1-1") },
-      { id: "1-2", name: "قيادة العملية التعليمية", indicators: makeIndicators("1-2") },
-      { id: "1-3", name: "المجتمع المدرسي", indicators: makeIndicators("1-3") }
+      {
+        id: "1-1",
+        name: "التخطيط",
+        indicators: [
+          "أداء الواجبات الوظيفية",
+          "التفاعل مع المجتمع المهني",
+          "التفاعل مع أولياء الأمور",
+          "التنوع في استراتيجيات التدريس",
+          "تحسين نتائج المتعلمين",
+          "إعداد وتنويع خطة التعلم",
+          "توظيف التقنيات ووسائل التعليم"
+        ]
+      },
+      {
+        id: "1-2",
+        name: "القيادة المدرسية",
+        indicators: [
+          "تفعيل الحوكمة المدرسية",
+          "إدارة الموارد بكفاءة",
+          "متابعة تنفيذ الخطط",
+          "إدارة المخاطر والأزمات",
+          "التحسين المستمر"
+        ]
+      }
     ]
   },
   {
     id: 2,
     name: "التعليم والتعلم",
     standards: [
-      { id: "2-1", name: "بناء خبرات التعلم", indicators: makeIndicators("2-1") },
-      { id: "2-2", name: "تقويم التعلم", indicators: makeIndicators("2-2") }
-    ]
-  },
-  {
-    id: 3,
-    name: "نواتج التعلم",
-    standards: [
-      { id: "3-1", name: "التحصيل التعليمي", indicators: makeIndicators("3-1") },
-      { id: "3-2", name: "التطور الشخصي", indicators: makeIndicators("3-2") }
+      {
+        id: "2-1",
+        name: "بناء خبرات التعلم",
+        indicators: [
+          "التخطيط المبني على نواتج تعلم",
+          "تنويع استراتيجيات التعليم",
+          "المواءمة مع الفروق الفردية",
+          "إدارة وقت التعلم",
+          "تعزيز مهارات القرن 21"
+        ]
+      },
+      {
+        id: "2-2",
+        name: "تقويم التعلم",
+        indicators: [
+          "تنوع أدوات التقويم",
+          "استخدام نتائج التقويم",
+          "التغذية الراجعة الفعالة",
+          "ملفات إنجاز الطلبة"
+        ]
+      }
     ]
   }
 ];
 
-const storageKey = "school-quality-report";
-const state = {
+const STORAGE = "report-clone-state-v2";
+const defaultState = {
   domainId: domains[0].id,
   standardId: domains[0].standards[0].id,
-  selectedIndicatorId: null,
-  checks: JSON.parse(localStorage.getItem(storageKey) || "{}")
+  scores: {},
+  strengths: "",
+  improvements: "",
+  employeeName: "",
+  employeeId: "",
+  employeeSpec: "",
+  employeeRank: "معلم ممارس"
 };
 
-const summaryEl = document.getElementById("summary");
-const domainsEl = document.getElementById("domains");
-const standardsEl = document.getElementById("standards");
-const indicatorsEl = document.getElementById("indicators");
-const detailEl = document.getElementById("detail");
+const persisted = JSON.parse(localStorage.getItem(STORAGE) || "null");
+const state = { ...defaultState, ...(persisted || {}) };
+
+const domainSelect = document.getElementById("domainSelect");
+const standardSelect = document.getElementById("standardSelect");
+const rowsEl = document.getElementById("rows");
+
+function saveState() {
+  localStorage.setItem(STORAGE, JSON.stringify(state));
+}
+
+function arabicToday() {
+  const now = new Date();
+  return now.toLocaleDateString("ar-SA-u-ca-islamic", {
+    weekday: "long",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  });
+}
+
+document.getElementById("todayLine").textContent = arabicToday();
 
 function activeDomain() {
-  return domains.find((d) => d.id === state.domainId);
+  return domains.find((d) => d.id === Number(state.domainId)) || domains[0];
 }
 
 function activeStandard() {
-  return activeDomain().standards.find((s) => s.id === state.standardId);
-}
-
-function checksFor(id) {
-  return state.checks[id] || { evidence: [], documents: [] };
-}
-
-function completion(indicator) {
-  const selected = checksFor(indicator.id);
-  const total = indicator.evidenceGuide.length + indicator.documentsGuide.length;
-  const done = (selected.evidence?.length || 0) + (selected.documents?.length || 0);
-  return Math.round((done / total) * 100);
-}
-
-function statusLabel(rate) {
-  if (rate === 0) return "لم يبدأ";
-  if (rate < 70) return "قيد التنفيذ";
-  if (rate < 100) return "متقدم";
-  return "منجز";
-}
-
-function save() {
-  localStorage.setItem(storageKey, JSON.stringify(state.checks));
-}
-
-function allIndicators() {
-  return domains.flatMap((d) => d.standards.flatMap((s) => s.indicators));
-}
-
-function renderSummary() {
-  const all = allIndicators();
-  const done = all.filter((i) => completion(i) === 100).length;
-  const progress = all.length
-    ? Math.round(all.reduce((sum, indicator) => sum + completion(indicator), 0) / all.length)
-    : 0;
-
-  summaryEl.innerHTML = `
-    <h2>لوحة ملخص التقرير</h2>
-    <div class="summary-grid">
-      <article class="metric"><p>المجالات</p><strong>${domains.length}</strong></article>
-      <article class="metric"><p>المعايير</p><strong>${domains.reduce((sum, domain) => sum + domain.standards.length, 0)}</strong></article>
-      <article class="metric"><p>المؤشرات</p><strong>${all.length}</strong></article>
-      <article class="metric"><p>مؤشرات منجزة</p><strong>${done}</strong></article>
-      <article class="metric"><p>متوسط الإنجاز</p><strong>${progress}%</strong></article>
-    </div>
-  `;
-}
-
-function renderDomains() {
-  domainsEl.innerHTML = `
-    <h3>المجالات</h3>
-    ${domains
-      .map(
-        (domain) =>
-          `<button class="domain-btn ${domain.id === state.domainId ? "active" : ""}" data-domain="${domain.id}">${domain.name}</button>`
-      )
-      .join("")}
-  `;
-
-  domainsEl.querySelectorAll("[data-domain]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const selectedDomain = domains.find((domain) => domain.id === Number(button.dataset.domain));
-      state.domainId = selectedDomain.id;
-      state.standardId = selectedDomain.standards[0].id;
-      state.selectedIndicatorId = null;
-      render();
-    });
-  });
-}
-
-function renderStandards() {
   const domain = activeDomain();
-  standardsEl.innerHTML = `
-    <h3>معايير مجال ${domain.name}</h3>
-    <div class="standards-tabs">
-      ${domain.standards
-        .map(
-          (standard) =>
-            `<button class="standard-btn ${standard.id === state.standardId ? "active" : ""}" data-standard="${standard.id}">${standard.name}</button>`
-        )
-        .join("")}
-    </div>
-  `;
+  return domain.standards.find((s) => s.id === state.standardId) || domain.standards[0];
+}
 
-  standardsEl.querySelectorAll("[data-standard]").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.standardId = button.dataset.standard;
-      state.selectedIndicatorId = null;
+function indicatorKey(idx) {
+  return `${activeStandard().id}.${idx}`;
+}
+
+function scoreFor(idx) {
+  return Number(state.scores[indicatorKey(idx)] || 3);
+}
+
+function weightList(count) {
+  const base = Math.floor(100 / count);
+  const rem = 100 - base * count;
+  return Array.from({ length: count }).map((_, i) => base + (i < rem ? 1 : 0));
+}
+
+function weightedValue(score, weight) {
+  return ((score / 5) * weight).toFixed(2);
+}
+
+function performanceLabel(percent) {
+  if (percent >= 90) return "متميز";
+  if (percent >= 80) return "متقدم";
+  if (percent >= 70) return "متقن";
+  if (percent >= 60) return "بحاجة إلى تطوير";
+  return "منخفض";
+}
+
+function fillSelectors() {
+  domainSelect.innerHTML = domains.map((d) => `<option value="${d.id}">${d.name}</option>`).join("");
+  domainSelect.value = String(state.domainId);
+
+  const standards = activeDomain().standards;
+  standardSelect.innerHTML = standards.map((s) => `<option value="${s.id}">${s.name}</option>`).join("");
+  if (!standards.some((s) => s.id === state.standardId)) state.standardId = standards[0].id;
+  standardSelect.value = state.standardId;
+}
+
+function renderRows() {
+  const indicators = activeStandard().indicators;
+  const weights = weightList(indicators.length);
+
+  rowsEl.innerHTML = indicators
+    .map((item, idx) => {
+      const score = scoreFor(idx);
+      const weight = weights[idx];
+      return `
+      <tr>
+        <td class="item-cell">${idx + 1} — ${item}</td>
+        <td>${weight}%</td>
+        <td>
+          <select class="score-select" data-idx="${idx}">
+            ${[1, 2, 3, 4, 5].map((n) => `<option value="${n}" ${score === n ? "selected" : ""}>${n}</option>`).join("")}
+          </select>
+        </td>
+        <td>${weightedValue(score, weight)}</td>
+      </tr>`;
+    })
+    .join("");
+
+  rowsEl.querySelectorAll(".score-select").forEach((select) => {
+    select.addEventListener("change", () => {
+      state.scores[indicatorKey(Number(select.dataset.idx))] = Number(select.value);
+      saveState();
       render();
     });
   });
+
+  const weightedTotal = indicators.reduce((sum, _item, idx) => {
+    const weight = weights[idx];
+    return sum + (scoreFor(idx) / 5) * weight;
+  }, 0);
+
+  const avg = indicators.reduce((sum, _item, idx) => sum + scoreFor(idx), 0) / indicators.length;
+  const percent = Math.round(weightedTotal);
+
+  document.getElementById("totalWeight").textContent = "100%";
+  document.getElementById("avgScore").textContent = avg.toFixed(2);
+  document.getElementById("weightedScore").textContent = weightedTotal.toFixed(2);
+  document.getElementById("gradePercent").textContent = `%${percent}`;
+  document.getElementById("overallPercent").textContent = `%${percent}`;
+  document.getElementById("performanceLevel").textContent = performanceLabel(percent);
 }
 
-function renderIndicators() {
-  const standard = activeStandard();
-  indicatorsEl.innerHTML = `
-    <h3>مؤشرات معيار ${standard.name}</h3>
-    <div class="indicators-grid">
-      ${standard.indicators
-        .map((indicator) => {
-          const rate = completion(indicator);
-          return `
-            <article class="indicator">
-              <p class="code">${indicator.id}</p>
-              <h3>${indicator.title}</h3>
-              <div class="badges">
-                <span class="badge badge-status">${statusLabel(rate)}</span>
-                <span class="badge badge-score">نسبة الإنجاز ${rate}%</span>
-              </div>
-              <button data-indicator="${indicator.id}">عرض دليل المؤشر</button>
-            </article>
-          `;
-        })
-        .join("")}
-    </div>
-  `;
-
-  indicatorsEl.querySelectorAll("[data-indicator]").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.selectedIndicatorId = button.dataset.indicator;
-      renderDetail();
-    });
-  });
-}
-
-function toggleCheck(indicatorId, type, idx) {
-  const current = checksFor(indicatorId);
-  const set = new Set(current[type] || []);
-  if (set.has(idx)) {
-    set.delete(idx);
-  } else {
-    set.add(idx);
-  }
-  state.checks[indicatorId] = { ...current, [type]: [...set].sort((a, b) => a - b) };
-  save();
-  renderSummary();
-  renderIndicators();
-  renderDetail();
-}
-
-function listChecks(indicatorId, type, items) {
-  const selected = checksFor(indicatorId)[type] || [];
-  return items
-    .map(
-      (item, idx) => `
-        <label class="check-item ${selected.includes(idx) ? "active" : ""}">
-          <input type="checkbox" data-check="${type}" data-idx="${idx}" ${selected.includes(idx) ? "checked" : ""} />
-          <span>${item}</span>
-        </label>
-      `
-    )
-    .join("");
-}
-
-function renderDetail() {
-  if (!state.selectedIndicatorId) {
-    detailEl.innerHTML = '<p class="detail-empty">اختر مؤشرًا لعرض دليل التحقق والتعامل معه بنفس آلية التقرير.</p>';
-    return;
-  }
-
-  const indicator = activeStandard().indicators.find((item) => item.id === state.selectedIndicatorId);
-  if (!indicator) {
-    detailEl.innerHTML = '<p class="detail-empty">المؤشر المحدد غير موجود ضمن المعيار الحالي.</p>';
-    return;
-  }
-
-  const rate = completion(indicator);
-  detailEl.innerHTML = `
-    <h3>${indicator.id} - ${indicator.title}</h3>
-    <p>الحالة الحالية: <strong>${statusLabel(rate)}</strong> • نسبة الإنجاز: <strong>${rate}%</strong></p>
-    <h4>الشواهد</h4>
-    <div class="checklist">${listChecks(indicator.id, "evidence", indicator.evidenceGuide)}</div>
-    <h4>الوثائق</h4>
-    <div class="checklist">${listChecks(indicator.id, "documents", indicator.documentsGuide)}</div>
-  `;
-
-  detailEl.querySelectorAll("[data-check]").forEach((checkbox) => {
-    checkbox.addEventListener("change", () => {
-      toggleCheck(indicator.id, checkbox.dataset.check, Number(checkbox.dataset.idx));
+function bindInputs() {
+  ["employeeName", "employeeId", "employeeSpec", "employeeRank", "strengths", "improvements"].forEach((id) => {
+    const el = document.getElementById(id);
+    el.value = state[id] || "";
+    el.addEventListener("input", () => {
+      state[id] = el.value;
+      saveState();
     });
   });
 }
 
 function render() {
-  renderSummary();
-  renderDomains();
-  renderStandards();
-  renderIndicators();
-  renderDetail();
+  fillSelectors();
+  renderRows();
 }
 
+domainSelect.addEventListener("change", () => {
+  state.domainId = Number(domainSelect.value);
+  state.standardId = activeDomain().standards[0].id;
+  saveState();
+  render();
+});
+
+standardSelect.addEventListener("change", () => {
+  state.standardId = standardSelect.value;
+  saveState();
+  render();
+});
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  saveState();
+  alert("تم حفظ البيانات بنجاح");
+});
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  if (!confirm("هل تريد مسح جميع بيانات التقرير؟")) return;
+  localStorage.removeItem(STORAGE);
+  location.reload();
+});
+
+document.getElementById("printBtn").addEventListener("click", () => window.print());
+
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const popup = window.open("", "_blank", "width=1100,height=800");
+  if (!popup) return;
+  popup.document.write(`
+    <html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير التصدير</title>
+    <style>body{font-family:Tajawal,sans-serif;padding:20px;background:#f6f8f7;color:#155a55}table{width:100%;border-collapse:collapse}th,td{border:1px solid #bcd2ce;padding:8px;text-align:center}th{background:#1a8079;color:#fff}</style>
+    </head><body>
+    <h2>تقرير التصدير - ${activeDomain().name} / ${activeStandard().name}</h2>
+    <p>الموظف: ${state.employeeName || "—"} | الهوية: ${state.employeeId || "—"}</p>
+    ${document.querySelector("table").outerHTML}
+    <p><strong>الدرجة النسبية:</strong> ${document.getElementById("gradePercent").textContent} — <strong>التقدير:</strong> ${document.getElementById("performanceLevel").textContent}</p>
+    <p><strong>نقاط القوة:</strong> ${state.strengths || "—"}</p>
+    <p><strong>مجالات التحسين:</strong> ${state.improvements || "—"}</p>
+    </body></html>
+  `);
+  popup.document.close();
+});
+
+const helpDialog = document.getElementById("helpDialog");
+document.getElementById("helpBtn").addEventListener("click", () => helpDialog.showModal());
+document.getElementById("closeHelp").addEventListener("click", () => helpDialog.close());
+
+bindInputs();
 render();
