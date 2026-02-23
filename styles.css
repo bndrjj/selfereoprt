@@ -183,13 +183,13 @@ button {
 }
 
 .indicator-card-head {
-  min-height: 290px;
+  min-height: 250px;
   margin-bottom: 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 0.9rem 1.3rem 2.4rem;
+  padding: 1rem 1.2rem 1.9rem;
 }
 
 .indicator-card-foot {
@@ -198,20 +198,22 @@ button {
 
 .indicator-code {
   margin: 0;
-  font-family: "Cairo", "Tajawal", sans-serif;
-  font-size: clamp(1.9rem, 2.8vw, 3rem);
-  font-weight: 800;
+  font-family: "Tajawal", sans-serif;
+  font-size: 20px;
+  font-weight: 700;
   line-height: 1.1;
   letter-spacing: 0.5px;
+  direction: ltr;
+  unicode-bidi: isolate;
   color: #24484d;
 }
 
 .indicator-heading {
   margin: 1.35rem 0 0;
-  font-family: "Cairo", "Tajawal", sans-serif;
-  font-size: clamp(1.45rem, 2.2vw, 2.35rem);
-  line-height: 1.32;
-  font-weight: 800;
+  font-family: "Tajawal", sans-serif;
+  font-size: 18px;
+  line-height: 1.55;
+  font-weight: 300;
   color: #24484d;
   max-width: 100%;
   word-break: break-word;
@@ -220,51 +222,57 @@ button {
 .indicator-card-foot {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.5rem;
 }
 
 .indicator-progress-row {
   display: grid;
   grid-template-columns: 1fr 1.55fr 1fr;
-  gap: 0.9rem;
+  gap: 0.7rem;
 }
 
 .indicator-chip {
-  min-height: 52px;
+  min-height: 46px;
   border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: "Cairo", "Tajawal", sans-serif;
-  font-size: clamp(1rem, 1.4vw, 1.5rem);
-  line-height: 1;
-  font-weight: 700;
+  font-family: "Tajawal", sans-serif;
+  font-size: 16px;
+  line-height: 1.25;
+  font-weight: 300;
 }
 
-.indicator-chip-status,
+.indicator-chip-status {
+  background: #cfdee2;
+  color: #24484d;
+}
+
 .indicator-chip-value {
   background: #cfdee2;
   color: #24484d;
+  font-weight: 700;
 }
 
 .indicator-chip-label {
   background: #ddd6c8;
   color: #24484d;
-  font-weight: 500;
+  font-weight: 300;
 }
 
 .indicator-level {
-  min-height: 56px;
+  min-height: 48px;
   border-radius: 18px;
   background: #ddd6c8;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1.05rem;
+  gap: 0.75rem;
   padding: 0.5rem 1rem;
-  font-family: "Cairo", "Tajawal", sans-serif;
-  font-size: clamp(0.98rem, 1.35vw, 1.4rem);
-  line-height: 1.2;
+  font-family: "Tajawal", sans-serif;
+  font-size: 16px;
+  line-height: 1.35;
+  font-weight: 300;
 }
 
 .indicator-level-text {
@@ -275,8 +283,8 @@ button {
 }
 
 .indicator-dot {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -317,14 +325,14 @@ button {
 .indicator-action {
   border: none;
   width: 100%;
-  min-height: 56px;
+  min-height: 48px;
   border-radius: 18px;
   background: #2f7f87;
   color: #f1f6f7;
-  font-family: "Cairo", "Tajawal", sans-serif;
-  font-size: clamp(1.05rem, 1.6vw, 1.6rem);
-  line-height: 1.15;
-  font-weight: 600;
+  font-family: "Tajawal", sans-serif;
+  font-size: 16px;
+  line-height: 1.3;
+  font-weight: 300;
   cursor: pointer;
 }
 
@@ -487,7 +495,7 @@ pre {
   }
 
   .indicator-card-head {
-    min-height: 220px;
+    min-height: 200px;
   }
 
   .indicator-progress-row {
