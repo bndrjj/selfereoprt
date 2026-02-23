@@ -260,231 +260,298 @@ document.getElementById('clearBtn').addEventListener('click', () => {
 document.getElementById('exportBtn').addEventListener('click', () => {
   const items = getFilteredIndicators();
   const completed = items.filter((i) => rowState(i.code).status === 'مكتمل').length;
-  const inProgress = items.filter((i) => rowState(i.code).status === 'قيد التنفيذ').length;
-  const pending = items.filter((i) => rowState(i.code).status === 'لم يبدأ').length;
   const completionRate = items.length ? Math.round((completed / items.length) * 100) : 0;
   const exportDate = todayAr();
+  const exportDateTime = new Date().toLocaleString('en-US', {
+    year: '2-digit',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
 
   let lastStandard = null;
   const rowsHtml = items.map((item) => {
     const current = rowState(item.code);
-    
-    // صف المعيار كعنوان فاصل
-    let standardRow = '';
-    if (item.standard !== lastStandard) {
-        standardRow = `
-            <tr class="row-standard">
-                <td colspan="7">المعيار: ${esc(item.standard)}</td>
-            </tr>
-        `;
-        lastStandard = item.standard;
-    }
+    const standardRow = item.standard !== lastStandard
+      ? `
+        <tr class="row-standard">
+          <td colspan="7">المعيار: ${esc(item.standard)}</td>
+        </tr>
+      `
+      : '';
+
+    lastStandard = item.standard;
 
     return `
       ${standardRow}
       <tr>
         <td class="col-indicator">
-            <div class="code-box">${esc(item.code)}</div>
-            <div class="ind-text">${esc(item.text)}</div>
+          <div class="code-box">${esc(item.code)}</div>
+          <div class="ind-text">${esc(item.text)}</div>
         </td>
-        <td class="col-evidence small-text">${esc(item.evidence)}</td>
-        <td class="col-docs small-text">${esc(item.docs)}</td>
+        <td class="small-text">${esc(item.evidence)}</td>
+        <td class="small-text">${esc(item.docs)}</td>
         <td class="center-text">${esc(current.status)}</td>
         <td class="center-text">${esc(current.availability)}</td>
         <td class="center-text">${esc(current.selfEval)}</td>
-        <td class="col-notes small-text">${esc(current.notes || '-')}</td>
+        <td class="small-text">${esc(current.notes || '-')}</td>
       </tr>
     `;
   }).join('');
 
-  const popup = window.open('', '_blank', 'width=1400,height=900');
+  const popup = window.open('', '_blank', 'width=1280,height=900');
   if (!popup) return;
-  
+
   popup.document.write(`
     <html lang="ar" dir="rtl">
     <head>
-    <meta charset="UTF-8">
-    <title>تقرير الاعتماد المدرسي</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-    <style>
-      @page { size: A4 landscape; margin: 10mm; }
-      :root {
-        --teal-dark: #0e5f59;
-        --teal-med: #136c65;
-        --teal-light: #eaf6f4;
-        --border-color: #bad1ce;
-        --text-dark: #1a4240;
-      }
-      * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      body { 
-          font-family: 'Tajawal', sans-serif; 
-          margin: 0; 
-          background: #fff; 
-          color: var(--text-dark);
-          font-size: 11px; /* تصغير الخط لاستيعاب المحتوى */
-      }
-      
-      .sheet { width: 100%; padding: 0; }
-
-      /* --- Header --- */
-      .header-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 2px solid var(--teal-dark);
-        padding-bottom: 15px;
-        margin-bottom: 15px;
-      }
-      .header-side { text-align: center; width: 250px; }
-      .header-side h3 { margin: 0; font-size: 14px; color: var(--teal-dark); font-weight: 800; line-height: 1.6; }
-      .header-side p { margin: 2px 0; font-size: 12px; font-weight: 600; }
-      
-      .logo-box img { width: 140px; height: auto; }
-
-      /* --- Info Bar (like the reference image) --- */
-      .info-bar {
-          display: flex;
+      <meta charset="UTF-8">
+      <title>تقرير الاعتماد المدرسي</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+      <style>
+        @page { size: A4 portrait; margin: 10mm; }
+        :root {
+          --teal-900: #0f5d57;
+          --teal-800: #156c65;
+          --teal-700: #1d827a;
+          --teal-100: #ecf5f4;
+          --line: #c8dcd9;
+          --text: #234946;
+          --muted: #5d7471;
+        }
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        body {
+          margin: 0;
+          font-family: 'Tajawal', sans-serif;
+          color: var(--text);
           background: #fff;
-          border: 1px solid var(--border-color);
-          border-radius: 12px;
-          margin-bottom: 15px;
-          overflow: hidden;
-      }
-      .info-item {
-          flex: 1;
-          padding: 8px 15px;
-          border-left: 1px solid var(--border-color);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-      }
-      .info-item:last-child { border-left: none; }
-      .info-label { font-size: 10px; color: #666; font-weight: 700; margin-bottom: 2px; }
-      .info-val { font-size: 13px; color: var(--teal-dark); font-weight: 800; }
-      
-      .progress-box { background: var(--teal-light); }
+        }
 
-      /* --- Table --- */
-      table { 
-          width: 100%; 
-          border-collapse: collapse; 
-          border: 1px solid var(--border-color);
-          table-layout: fixed; /* تثبيت العرض لمنع التمدد */
-      }
-      
-      th {
-          background-color: var(--teal-med);
-          color: #fff;
-          padding: 8px 5px;
-          font-size: 11px;
-          font-weight: 700;
-          border: 1px solid #0b4d48;
-          text-align: center;
-      }
+        .sheet { width: 100%; }
 
-      td {
-          padding: 6px 8px;
-          border: 1px solid #dcecea;
-          vertical-align: top;
-          font-size: 11px;
-          line-height: 1.4;
-      }
-
-      /* Row styling */
-      tr:nth-child(even) td { background-color: #fcfdfd; }
-      
-      .row-standard td {
-          background-color: #ebf5f4;
-          color: var(--teal-dark);
-          font-weight: 800;
-          font-size: 12px;
-          border-bottom: 2px solid var(--border-color);
-          padding-top: 10px;
-          padding-bottom: 5px;
-      }
-
-      /* Column Widths (optimized for landscape) */
-      .col-indicator { width: 22%; }
-      .col-evidence  { width: 22%; }
-      .col-docs      { width: 18%; }
-      .col-status    { width: 10%; }
-      .col-avail     { width: 10%; }
-      .col-eval      { width: 6%; }
-      .col-notes     { width: 12%; }
-
-      /* Inner Cell Styling */
-      .code-box {
-          display: inline-block;
-          background: var(--teal-light);
-          color: var(--teal-dark);
-          padding: 2px 6px;
-          border-radius: 4px;
-          font-weight: 800;
-          font-size: 10px;
-          margin-bottom: 4px;
-      }
-      .ind-text { font-weight: 700; color: #222; }
-      
-      .small-text { font-size: 10px; color: #444; }
-      .center-text { text-align: center; vertical-align: middle; font-weight: 600; }
-
-      /* --- Footer --- */
-      .footer-sigs {
-          margin-top: 30px;
+        .meta-top {
           display: flex;
           justify-content: space-between;
-          padding: 0 50px;
-          page-break-inside: avoid;
-      }
-      .sig-block {
-          text-align: center;
-          width: 200px;
-      }
-      .sig-title { font-weight: 700; color: var(--teal-dark); margin-bottom: 40px; }
-      .sig-line { border-top: 1px dashed #999; width: 100%; display: block; }
+          align-items: center;
+          color: #3d5956;
+          font-size: 12px;
+          margin-bottom: 12px;
+          font-weight: 600;
+        }
 
-    </style>
+        .header-main {
+          display: grid;
+          grid-template-columns: 1fr 220px 1fr;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 14px;
+          border-bottom: 3px solid var(--teal-800);
+          padding-bottom: 12px;
+        }
+        .header-col { min-height: 140px; }
+        .header-col.right { text-align: right; }
+        .header-col.left { text-align: left; }
+        .header-col p {
+          margin: 0 0 4px;
+          font-size: 15px;
+          line-height: 1.45;
+          color: var(--teal-900);
+          font-weight: 800;
+        }
+        .header-col .sub {
+          font-size: 13px;
+          font-weight: 700;
+          color: var(--text);
+        }
+
+        .logo-wrap {
+          text-align: center;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .logo-wrap img {
+          width: 175px;
+          max-width: 100%;
+          height: auto;
+          object-fit: contain;
+        }
+
+        .summary-bar {
+          display: grid;
+          grid-template-columns: repeat(5, 1fr);
+          border: 1px solid var(--line);
+          border-radius: 14px;
+          overflow: hidden;
+          margin-bottom: 14px;
+        }
+        .summary-item {
+          border-left: 1px solid var(--line);
+          padding: 10px 8px;
+          text-align: center;
+          background: #fff;
+        }
+        .summary-item:last-child { border-left: none; }
+        .summary-item.highlight { background: var(--teal-100); }
+        .summary-label {
+          display: block;
+          font-size: 12px;
+          color: var(--muted);
+          margin-bottom: 4px;
+          font-weight: 700;
+        }
+        .summary-value {
+          display: block;
+          color: var(--teal-900);
+          font-size: 26px;
+          line-height: 1;
+          font-weight: 800;
+        }
+        .summary-value.text {
+          font-size: 30px;
+        }
+
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          table-layout: fixed;
+          border: 1px solid var(--line);
+        }
+        th {
+          background: var(--teal-800);
+          color: #fff;
+          border: 1px solid #0d4f4a;
+          font-size: 14px;
+          font-weight: 700;
+          padding: 10px 6px;
+          text-align: center;
+        }
+        td {
+          border: 1px solid #d5e5e2;
+          font-size: 15px;
+          line-height: 1.4;
+          padding: 8px 8px;
+          vertical-align: top;
+        }
+        .row-standard td {
+          background: #edf6f5;
+          color: var(--teal-900);
+          font-size: 14px;
+          font-weight: 800;
+          padding: 8px 10px;
+        }
+
+        .col-indicator { width: 24%; }
+        .col-evidence { width: 22%; }
+        .col-docs { width: 18%; }
+        .col-status { width: 10%; }
+        .col-avail { width: 10%; }
+        .col-eval { width: 6%; }
+        .col-notes { width: 10%; }
+
+        .code-box {
+          display: inline-block;
+          padding: 3px 8px;
+          border-radius: 8px;
+          background: var(--teal-100);
+          color: var(--teal-900);
+          font-size: 13px;
+          font-weight: 800;
+          margin-bottom: 5px;
+        }
+        .ind-text { font-weight: 800; color: #1f413d; }
+        .small-text { color: #35524f; }
+        .center-text {
+          text-align: center;
+          vertical-align: middle;
+          font-weight: 700;
+        }
+
+        .signatures {
+          display: flex;
+          justify-content: space-between;
+          gap: 48px;
+          margin-top: 28px;
+          page-break-inside: avoid;
+        }
+        .sig-item {
+          flex: 1;
+          text-align: center;
+        }
+        .sig-title {
+          color: var(--teal-900);
+          font-size: 28px;
+          font-weight: 800;
+          margin-bottom: 36px;
+        }
+        .sig-line {
+          border-top: 2px dashed #9bb3b0;
+          height: 1px;
+          width: 68%;
+          margin: 0 auto;
+        }
+
+        .footer-meta {
+          margin-top: 22px;
+          display: flex;
+          justify-content: space-between;
+          font-size: 11px;
+          color: #556c69;
+          direction: ltr;
+        }
+      </style>
     </head>
     <body>
       <main class="sheet">
-        
-        <header class="header-container">
-            <div class="header-side" style="text-align: right;">
-                <h3>المملكة العربية السعودية<br>وزارة التعليم<br>الإدارة العامة للتعليم بالمنطقة الشرقية</h3>
-            </div>
-            <div class="logo-box">
-                <img src="وزارة التعليم.png" alt="Logo">
-            </div>
-            <div class="header-side" style="text-align: left;">
-                <h3>نموذج المتابعة المستمرة<br>تقرير الاعتماد المدرسي</h3>
-                <p>تاريخ الإصدار: ${esc(exportDate)}</p>
-            </div>
+        <div class="meta-top">
+          <span>تقرير الاعتماد المدرسي</span>
+          <span>${esc(exportDateTime)}</span>
+        </div>
+
+        <header class="header-main">
+          <div class="header-col right">
+            <p>المملكة العربية السعودية</p>
+            <p>وزارة التعليم</p>
+            <p>${esc(state.regionName)}</p>
+          </div>
+
+          <div class="logo-wrap">
+            <img src="وزارة التعليم.png" alt="شعار وزارة التعليم" />
+          </div>
+
+          <div class="header-col left">
+            <p>نموذج المتابعة المستمرة</p>
+            <p>تقرير الاعتماد المدرسي</p>
+            <p class="sub">تاريخ الإصدار ${esc(exportDate)}</p>
+          </div>
         </header>
 
-        <div class="info-bar">
-            <div class="info-item">
-                <span class="info-label">اسم المدرسة</span>
-                <span class="info-val">${esc(state.schoolName)}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">المجال</span>
-                <span class="info-val">${esc(state.filterDomain)}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">المعيار المختار</span>
-                <span class="info-val">${esc(state.filterStandard)}</span>
-            </div>
-             <div class="info-item">
-                <span class="info-label">عدد المؤشرات</span>
-                <span class="info-val">${items.length}</span>
-            </div>
-            <div class="info-item progress-box">
-                <span class="info-label">نسبة الإنجاز</span>
-                <span class="info-val">${completionRate}%</span>
-            </div>
-        </div>
+        <section class="summary-bar">
+          <div class="summary-item">
+            <span class="summary-label">اسم المدرسة</span>
+            <span class="summary-value text">${esc(state.schoolName)}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">المجال</span>
+            <span class="summary-value text">${esc(state.filterDomain)}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">المعيار المختار</span>
+            <span class="summary-value text">${esc(state.filterStandard)}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">عدد المؤشرات</span>
+            <span class="summary-value">${items.length}</span>
+          </div>
+          <div class="summary-item highlight">
+            <span class="summary-label">نسبة الإنجاز</span>
+            <span class="summary-value">${completionRate}%</span>
+          </div>
+        </section>
 
         ${items.length ? `
           <table>
@@ -501,23 +568,27 @@ document.getElementById('exportBtn').addEventListener('click', () => {
             </thead>
             <tbody>${rowsHtml}</tbody>
           </table>
-        ` : '<div style="text-align:center; padding: 50px;">لا توجد مؤشرات مطابقة للفلاتر الحالية.</div>'}
+        ` : '<div style="text-align:center;padding:44px;font-size:16px;">لا توجد مؤشرات مطابقة للفلاتر الحالية.</div>'}
 
-        <div class="footer-sigs">
-            <div class="sig-block">
-                <div class="sig-title">قائد/ة المدرسة</div>
-                <span class="sig-line"></span>
-            </div>
-            <div class="sig-block">
-                <div class="sig-title">مشرف/ة الجودة</div>
-                <span class="sig-line"></span>
-            </div>
+        <section class="signatures">
+          <div class="sig-item">
+            <div class="sig-title">قائدة/ة المدرسة</div>
+            <div class="sig-line"></div>
+          </div>
+          <div class="sig-item">
+            <div class="sig-title">مشرفة/ة الجودة</div>
+            <div class="sig-line"></div>
+          </div>
+        </section>
+
+        <div class="footer-meta">
+          <span>https://bndrjj.github.io/selfereoprt/report.html</span>
+          <span>Page 1 of 1</span>
         </div>
-
       </main>
+
       <script>
-        // طباعة تلقائية عند الفتح
-        setTimeout(() => { window.print(); }, 1000);
+        setTimeout(() => { window.print(); }, 800);
       </script>
     </body>
     </html>
