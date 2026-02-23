@@ -190,6 +190,14 @@ function calcLevel(count) {
   return { cls: "level-vhigh", text: "🔵 متحقق بدرجة مرتفعة جداً" };
 }
 
+function levelCardMeta(level) {
+  const label = level.text.replace(/^[^\s]+\s*/, "");
+  if (level.cls === "level-low") return { label, cls: "indicator-level-low", dot: "dot-low" };
+  if (level.cls === "level-med") return { label, cls: "indicator-level-med", dot: "dot-med" };
+  if (level.cls === "level-high") return { label, cls: "indicator-level-high", dot: "dot-high" };
+  return { label, cls: "indicator-level-vhigh", dot: "dot-vhigh" };
+}
+
 function getChecks(indicatorId) {
   return state.checks[indicatorId] || { evidence: [], documents: [] };
 }
@@ -294,17 +302,30 @@ function renderStandards() {
 function renderIndicators() {
   listViewEl.innerHTML = `
     <h2>الطبقة الثالثة: مؤشرات معيار ${state.standard.name}</h2>
-    <div class="grid">${state.standard.indicators
+    <div class="grid indicators-grid">${state.standard.indicators
       .map((i) => {
         const score = providedCount(i.id);
         const level = calcLevel(score);
+        const levelMeta = levelCardMeta(level);
         const completion = completionRate(i);
+        const status = statusBadge(i.id);
         return `<article class="item-card">
-          <p class="code">${i.id}</p>
-          <h3>${i.title}</h3>
-          <div class="row"><span class="status">${statusBadge(i.id)}</span><span class="${level.cls}">${level.text}</span></div>
-          <p>نسبة الإنجاز: <strong>${completion}%</strong></p>
-          <button data-indicator="${i.id}">الدليل وقائمة التحقق</button>
+          <section class="indicator-card-head">
+            <p class="code indicator-code">${i.id}</p>
+            <h3 class="indicator-heading">${i.title}</h3>
+          </section>
+          <section class="indicator-card-foot">
+            <div class="indicator-progress-row">
+              <span class="indicator-chip indicator-chip-status">${status}</span>
+              <span class="indicator-chip indicator-chip-label">نسبة الإنجاز</span>
+              <span class="indicator-chip indicator-chip-value">%${completion}</span>
+            </div>
+            <div class="indicator-level ${levelMeta.cls}">
+              <span class="indicator-level-text">${levelMeta.label}</span>
+              <span class="indicator-dot ${levelMeta.dot}"></span>
+            </div>
+            <button class="indicator-action" data-indicator="${i.id}">دليل قائمة التحقق للمؤشر</button>
+          </section>
         </article>`;
       })
       .join("")}</div>`;
