@@ -300,40 +300,84 @@ function renderStandards() {
 }
 
 function renderIndicators() {
-  listViewEl.innerHTML = `
-    <h2>الطبقة الثالثة: مؤشرات معيار ${state.standard.name}</h2>
-    <div class="grid indicators-grid">${state.standard.indicators
-      .map((i) => {
-        const score = providedCount(i.id);
-        const level = calcLevel(score);
-        const levelMeta = levelCardMeta(level);
-        const completion = completionRate(i);
-        const status = statusBadge(i.id);
-        return `<article class="item-card">
-          <section class="indicator-card-head">
-            <p class="code indicator-code">${i.id}</p>
-            <h3 class="indicator-heading">${i.title}</h3>
-          </section>
-          <section class="indicator-card-foot">
-            <div class="indicator-progress-row">
-              <span class="indicator-chip indicator-chip-status">${status}</span>
-              <span class="indicator-chip indicator-chip-label">نسبة الإنجاز</span>
-              <span class="indicator-chip indicator-chip-value">%${completion}</span>
-            </div>
-            <div class="indicator-level ${levelMeta.cls}">
-              <span class="indicator-level-text">${levelMeta.label}</span>
-              <span class="indicator-dot ${levelMeta.dot}"></span>
-            </div>
-            <button class="indicator-action" data-indicator="${i.id}">دليل قائمة التحقق للمؤشر</button>
-          </section>
-        </article>`;
-      })
-      .join("")}</div>`;
+  const selectedId = state.selectedIndicator?.id;
+  const indicators = state.standard.indicators;
+  const selectedIndex = indicators.findIndex((indicator) => indicator.id === selectedId);
+  const isFocusedMode = selectedIndex !== -1;
+
+  const indicatorCardTemplate = (i) => {
+    const score = providedCount(i.id);
+    const level = calcLevel(score);
+    const levelMeta = levelCardMeta(level);
+    const completion = completionRate(i);
+    const status = statusBadge(i.id);
+
+    return `<article class="item-card">
+      <section class="indicator-card-head">
+        <p class="code indicator-code">${i.id}</p>
+        <h3 class="indicator-heading">${i.title}</h3>
+      </section>
+      <section class="indicator-card-foot">
+        <div class="indicator-progress-row">
+          <span class="indicator-chip indicator-chip-status">${status}</span>
+          <span class="indicator-chip indicator-chip-label">نسبة الإنجاز</span>
+          <span class="indicator-chip indicator-chip-value">%${completion}</span>
+        </div>
+        <div class="indicator-level ${levelMeta.cls}">
+          <span class="indicator-level-text">${levelMeta.label}</span>
+          <span class="indicator-dot ${levelMeta.dot}"></span>
+        </div>
+        <button class="indicator-action" data-indicator="${i.id}">دليل قائمة التحقق للمؤشر</button>
+      </section>
+    </article>`;
+  };
+
+  if (isFocusedMode) {
+    const selectedIndicator = indicators[selectedIndex];
+    const previous = indicators[selectedIndex - 1];
+    const next = indicators[selectedIndex + 1];
+
+    listViewEl.innerHTML = `
+      <h2>الطبقة الثالثة: مؤشرات معيار ${state.standard.name}</h2>
+      <section class="focus-toolbar">
+        <div class="focus-title-wrap">
+          <span class="focus-badge">وضع التركيز</span>
+          <p>تعمل الآن على مؤشر واحد فقط لسرعة الإنجاز والدقة.</p>
+        </div>
+        <div class="focus-actions">
+          <button class="focus-btn focus-btn-outline" data-focus="back-all">العودة لعرض جميع المؤشرات</button>
+          <button class="focus-btn" data-focus="prev" ${!previous ? "disabled" : ""}>المؤشر السابق</button>
+          <button class="focus-btn" data-focus="next" ${!next ? "disabled" : ""}>المؤشر التالي</button>
+        </div>
+      </section>
+      <div class="grid indicators-grid focused-grid">${indicatorCardTemplate(selectedIndicator)}</div>`;
+
+    listViewEl.querySelector('[data-focus="back-all"]')?.addEventListener("click", () => {
+      state.selectedIndicator = null;
+      render();
+    });
+
+    listViewEl.querySelector('[data-focus="prev"]')?.addEventListener("click", () => {
+      if (!previous) return;
+      state.selectedIndicator = previous;
+      render();
+    });
+
+    listViewEl.querySelector('[data-focus="next"]')?.addEventListener("click", () => {
+      if (!next) return;
+      state.selectedIndicator = next;
+      render();
+    });
+  } else {
+    listViewEl.innerHTML = `
+      <h2>الطبقة الثالثة: مؤشرات معيار ${state.standard.name}</h2>
+      <div class="grid indicators-grid">${indicators.map((i) => indicatorCardTemplate(i)).join("")}</div>`;
+  }
 
   listViewEl.querySelectorAll("[data-indicator]").forEach((btn) => {
     btn.addEventListener("click", () => {
       state.selectedIndicator = state.standard.indicators.find((i) => i.id === btn.dataset.indicator);
-      renderDetail();
+      render();
     });
   });
 }
