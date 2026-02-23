@@ -1,178 +1,54 @@
-:root {
-  --ink: #125b56;
-  --ink-soft: #2d7e76;
-  --line: #cfe0dd;
-  --bg: #f3f6f5;
-}
-
-* { box-sizing: border-box; }
-body { margin: 0; background: #ecefef; color: #1f4e4a; font-family: "Tajawal", sans-serif; }
-.page { max-width: 1500px; margin: 0 auto; background: var(--bg); min-height: 100vh; padding: 1rem; }
-
-.header {
-  display: grid;
-  direction: ltr;
-  grid-template-columns: 220px 340px minmax(420px, 1fr);
-  grid-template-areas: "side logo text";
-  align-items: center;
-  border-bottom: 2px solid #2b8a84;
-  padding-bottom: 0.8rem;
-  margin-bottom: 0.7rem;
-  gap: 0.85rem;
-}
-
-.left-col {
-  grid-area: side;
-  direction: rtl;
-}
-
-.logo-wrap {
-  grid-area: logo;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 150px;
-}
-
-.header-main {
-  grid-area: text;
-  direction: rtl;
-  text-align: right;
-}
-
-.line { margin: 0 0 0.32rem; font-weight: 800; font-size: 1.05rem; color: #0d5a55; }
-.moe-logo { width: min(300px, 100%); max-height: 160px; height: auto; object-fit: contain; display: block; }
-.header-main .line { font-size: 0.95rem; line-height: 1.45; }
-.header-main .line:first-child,
-.header-main .line:nth-child(2) { font-size: 1.3rem; }
-.line-editable { display: flex; align-items: center; justify-content: flex-end; gap: 0.45rem; }
-.edit-btn { border: none; background: transparent; color: #0f6a63; cursor: pointer; font-size: 1rem; }
-.left-col .line { text-align: left; font-size: 0.9rem; color: #2e6662; }
-.header-actions { display: flex; justify-content: flex-start; }
-.round-btn { width: 30px; height: 30px; border-radius: 999px; border: 1px solid var(--line); background: #eaf3f1; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; color: var(--ink-soft); }
-
-.toolbar { display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; margin-bottom: 0.6rem; }
-.sel { position: relative; }
-.sel select { appearance: none; border: 1px solid var(--line); min-width: 220px; background: #f8fbfa; color: var(--ink); border-radius: 999px; padding: 0.42rem 2rem 0.42rem 0.8rem; font-weight: 700; }
-.sel span { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #638b86; }
-.btn { border: 1px solid #3f857f; background: linear-gradient(180deg, #2a8b84 0%, #1a6d67 100%); color: #fff; border-radius: 999px; padding: 0.42rem 0.95rem; font-weight: 700; cursor: pointer; }
-.btn.secondary { background: #eef5f4; color: var(--ink); }
-.btn.warn { background: #fce4e1; border-color: #f4c6bc; color: #aa4f41; }
-
-.summary { border: 1px solid var(--line); border-radius: 12px; background: #f7fbfa; padding: 0.5rem 0.7rem; margin-bottom: 0.6rem; font-weight: 700; color: #206862; display: flex; gap: 1.2rem; flex-wrap: wrap; }
-
-.table-wrap { overflow: auto; border: 1px solid #b6ceca; border-radius: 12px; }
-table { width: 100%; border-collapse: collapse; min-width: 1600px; }
-th { background: #197f78; color: #fff; padding: 0.55rem; font-size: 0.92rem; border-left: 1px solid #4f9893; }
-td { background: #f4f9f8; border-bottom: 1px solid #d4e2df; border-left: 1px solid #d8e6e3; padding: 0.45rem; vertical-align: top; font-size: 0.9rem; }
-.indicator-cell { min-width: 300px; font-weight: 700; color: #1c6863; }
-.evidence-cell, .docs-cell { min-width: 330px; line-height: 1.5; }
-
-select.row-select, input.row-input, textarea.row-textarea {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  margin-top: 0.55rem;
-  border: 1px solid #b6ceca;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-th {
-  background: #197f78;
-  color: #fff;
-  padding: 0.65rem 0.5rem;
-  font-weight: 700;
-  border-left: 1px solid #4f9893;
-}
-th:last-child { border-left: 0; }
-
-td {
-  border-bottom: 1px solid #d4e2df;
-  border-left: 1px solid #d8e6e3;
-  padding: 0.45rem 0.5rem;
-  text-align: center;
-  font-weight: 500;
-  background: #f4f9f8;
-  transition: background 0.3s ease;
-}
-
-/* ── Row coloring by score level ── */
-tr.score-5 td { background: linear-gradient(90deg, #bbf7d0 0%, #f0fdf4 35%, #f4f9f8 100%); }
-tr.score-4 td { background: linear-gradient(90deg, #dcfce7 0%, #f0fdf4 35%, #f4f9f8 100%); }
-tr.score-3 td { background: linear-gradient(90deg, #e0f2fe 0%, #f0f9ff 35%, #f4f9f8 100%); }
-tr.score-2 td { background: linear-gradient(90deg, #fef3c7 0%, #fffbeb 35%, #f4f9f8 100%); }
-tr.score-1 td { background: linear-gradient(90deg, #fecaca 0%, #fef2f2 35%, #f4f9f8 100%); }
-
-tr.score-5 td.item-cell { color: #15803d; }
-tr.score-4 td.item-cell { color: #16a34a; }
-tr.score-3 td.item-cell { color: #0369a1; }
-tr.score-2 td.item-cell { color: #b45309; }
-tr.score-1 td.item-cell { color: #dc2626; }
-
-tr.score-5 .score-select { border-color: #86efac; background: #f0fdf4; }
-tr.score-4 .score-select { border-color: #bbf7d0; background: #f0fdf4; }
-tr.score-3 .score-select { border-color: #bae6fd; background: #f0f9ff; }
-tr.score-2 .score-select { border-color: #fde68a; background: #fffbeb; }
-tr.score-1 .score-select { border-color: #fca5a5; background: #fef2f2; }
-
-td.item-cell {
-  text-align: right;
-  color: #1c6863;
-  font-weight: 700;
-}
-
-.score-select {
-  border: 1px solid #bdd3cf;
-  border-radius: 8px;
-  background: #fff;
-  font: inherit;
-  padding: 0.3rem;
-}
-textarea.row-textarea { min-height: 70px; resize: vertical; }
-
-.standard-row td {
-  background: #dcecea;
-  color: #145f59;
-  font-weight: 800;
-  text-align: right;
-}
-
-details {
-  display: block;
-}
-
-details summary {
-  cursor: pointer;
-  color: #176863;
-  font-weight: 700;
-  margin-bottom: 0.2rem;
-}
-
-details[open] summary {
-  margin-bottom: 0.35rem;
-}
+/* أضف هذا الكود في نهاية ملف report.css */
 
 @media print {
-  .noprint { display: none !important; }
-  body { background: #fff; }
-  .page { max-width: 100%; padding: 0; }
-}
-
-@media (max-width: 900px) {
-  .header {
-    direction: rtl;
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "text"
-      "logo"
-      "side";
-    text-align: center;
-    gap: 0.45rem;
+  @page {
+    size: landscape;
+    margin: 10mm;
   }
-  .moe-logo { width: 220px; max-height: 125px; }
-  .header-main { text-align: center; }
-  .line-editable { justify-content: center; }
-  .header-main .line { font-size: 1rem; justify-content: center; }
-  .left-col .line, .header-actions { justify-content: center; text-align: center; }
+
+  body {
+    background: white;
+  }
+
+  .page {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+  }
+
+  .header, .toolbar, .noprint {
+    display: none !important;
+  }
+  
+  /* إخفاء الأزرار التفاعلية وجعل الجدول بسيط */
+  details > summary {
+    list-style: none;
+    display: none;
+  }
+  
+  details[open] summary ~ * {
+    animation: none;
+  }
+  
+  details {
+    display: block !important;
+  }
+  
+  /* تعديل الخطوط للطباعة */
+  table {
+    font-size: 10px;
+    width: 100%;
+  }
+
+  th, td {
+    padding: 4px;
+    border: 1px solid #ccc;
+  }
+  
+  /* إجبار الخلفيات الملونة على الظهور */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 }
