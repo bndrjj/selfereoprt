@@ -62,7 +62,7 @@ body { margin: 0; background: #ecefef; color: #1f4e4a; font-family: "Tajawal", s
 .summary { border: 1px solid var(--line); border-radius: 12px; background: #f7fbfa; padding: 0.5rem 0.7rem; margin-bottom: 0.6rem; font-weight: 700; color: #206862; display: flex; gap: 1.2rem; flex-wrap: wrap; }
 
 .table-wrap { overflow: auto; border: 1px solid #b6ceca; border-radius: 12px; background: #fff; }
-table { width: 100%; border-collapse: collapse; min-width: 1500px; table-layout: fixed; }
+table { width: 100%; border-collapse: collapse; min-width: 1300px; table-layout: auto; }
 th {
   background: #197f78;
   color: #fff;
@@ -86,19 +86,11 @@ td {
 }
 tbody tr:nth-child(even) td { background: #f8fbfa; }
 
-th:nth-child(1), td:nth-child(1) { width: 9%; }
-th:nth-child(2), td:nth-child(2) { width: 10%; }
-th:nth-child(3), td:nth-child(3) { width: 22%; }
-th:nth-child(4), td:nth-child(4) { width: 16%; }
-th:nth-child(5), td:nth-child(5) { width: 16%; }
-th:nth-child(6), td:nth-child(6) { width: 8%; }
-th:nth-child(7), td:nth-child(7) { width: 8%; }
-th:nth-child(8), td:nth-child(8) { width: 5%; }
-th:nth-child(9), td:nth-child(9) { width: 10%; }
-th:nth-child(10), td:nth-child(10) { width: 16%; }
+.indicator-cell { min-width: 290px; font-weight: 700; color: #1c6863; text-align: right; }
+.evidence-cell, .docs-cell { min-width: 280px; text-align: right; }
 
-.indicator-cell { min-width: 300px; font-weight: 700; color: #1c6863; text-align: right; }
-.evidence-cell, .docs-cell { min-width: 320px; text-align: right; }
+#rows { display: table-row-group; }
+#rows tr { display: table-row; }
 
 select.row-select, textarea.row-textarea {
   width: 100%;
