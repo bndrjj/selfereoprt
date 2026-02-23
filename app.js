@@ -438,9 +438,16 @@ function renderDetail() {
   const checks = getChecks(i.id);
   const score = providedCount(i.id);
   const level = calcLevel(score);
+  const progress = completionRate(i);
 
   detailViewEl.hidden = false;
   detailViewEl.innerHTML = `
+    <div class="detail-progress-wrap" aria-label="نسبة إنجاز المؤشر">
+      <div class="indicator-progress-summary">
+        <div class="indicator-progress-track"><span style="width:${progress}%"></span></div>
+        <strong class="indicator-progress-value">%${progress}</strong>
+      </div>
+    </div>
     <h2>${i.id}</h2>
     <p class="indicator-title">${i.title}</p>
     <div class="evidence-head">
