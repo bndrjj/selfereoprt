@@ -1,3 +1,5 @@
+/* استبدل محتوى report.js الحالي بهذا الكود */
+
 const indicators = [
   { domain: 'الإدارة المدرسية', standard: 'التخطيط', code: '1-1-1-1', text: 'تضع المدرسة خطة تشغيلية مكتملة العناصر وفق أهداف تطويرية محددة.', evidence: 'وجود خطة تشغيلية، يشارك فيها الكادر التعليمي، تتضمن (الرؤية والرسالة والقيم – أهداف – مبادرات نوعية – برامج وأنشطة متنوعة).', docs: 'وثيقة الخطة التشغيلية (شاملة التحليل الرباعي SWOT، الأهداف التشغيلية والفرعية، الإجراءات، الجداول الزمنية، والموارد المالية والبشرية).' },
   { domain: 'الإدارة المدرسية', standard: 'التخطيط', code: '1-1-1-2', text: 'تتابع المدرسة تنفيذ خطتها وتطورها بما يضمن تحقيق أهدافها.', evidence: 'إجراءات واضحة، الأدوار والمسؤوليات محددة، توافر مؤشرات لمتابعة تقدم البرامج والأنشطة، تحديد المشكلات والتحديات عند التنفيذ، تقدم الحلول.', docs: 'سجلات متابعة الخطة التشغيلية (لتحديد البرامج المنفذة وغير المنفذة ومؤشرات الإنجاز).' },
@@ -100,7 +102,6 @@ function editHeaderValue(key, label) {
   save();
   renderHeaderMeta();
 }
-
 
 function rowState(code) {
   return state.rows[code] || {
@@ -253,6 +254,9 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   location.reload();
 });
 
+// =========================================================
+//  هذا هو الجزء المسؤول عن توليد التقرير الاحترافي الجديد
+// =========================================================
 document.getElementById('exportBtn').addEventListener('click', () => {
   const items = getFilteredIndicators();
   const completed = items.filter((i) => rowState(i.code).status === 'مكتمل').length;
@@ -261,122 +265,262 @@ document.getElementById('exportBtn').addEventListener('click', () => {
   const completionRate = items.length ? Math.round((completed / items.length) * 100) : 0;
   const exportDate = todayAr();
 
+  let lastStandard = null;
   const rowsHtml = items.map((item) => {
     const current = rowState(item.code);
+    
+    // صف المعيار كعنوان فاصل
+    let standardRow = '';
+    if (item.standard !== lastStandard) {
+        standardRow = `
+            <tr class="row-standard">
+                <td colspan="7">المعيار: ${esc(item.standard)}</td>
+            </tr>
+        `;
+        lastStandard = item.standard;
+    }
+
     return `
+      ${standardRow}
       <tr>
-        <td class="col-indicator">(${esc(item.code)}) ${esc(item.text)}</td>
-        <td class="col-evidence">${esc(item.evidence)}</td>
-        <td class="col-docs">${esc(item.docs)}</td>
-        <td>${esc(current.status)}</td>
-        <td>${esc(current.availability)}</td>
-        <td>${esc(current.selfEval)}</td>
-        <td>${esc(current.owner || '-')}</td>
-        <td class="col-notes">${esc(current.notes || '-')}</td>
+        <td class="col-indicator">
+            <div class="code-box">${esc(item.code)}</div>
+            <div class="ind-text">${esc(item.text)}</div>
+        </td>
+        <td class="col-evidence small-text">${esc(item.evidence)}</td>
+        <td class="col-docs small-text">${esc(item.docs)}</td>
+        <td class="center-text">${esc(current.status)}</td>
+        <td class="center-text">${esc(current.availability)}</td>
+        <td class="center-text">${esc(current.selfEval)}</td>
+        <td class="col-notes small-text">${esc(current.notes || '-')}</td>
       </tr>
     `;
   }).join('');
 
   const popup = window.open('', '_blank', 'width=1400,height=900');
   if (!popup) return;
+  
   popup.document.write(`
-    <html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير التصدير</title>
+    <html lang="ar" dir="rtl">
+    <head>
+    <meta charset="UTF-8">
+    <title>تقرير الاعتماد المدرسي</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <style>
       @page { size: A4 landscape; margin: 10mm; }
       :root {
-        --primary:#136c65;
-        --primary-soft:#eaf6f4;
-        --line:#cfe2de;
-        --text:#164c49;
+        --teal-dark: #0e5f59;
+        --teal-med: #136c65;
+        --teal-light: #eaf6f4;
+        --border-color: #bad1ce;
+        --text-dark: #1a4240;
       }
-      * { box-sizing: border-box; }
-      body { font-family: Tajawal, sans-serif; margin: 0; background: #f2f6f5; color: var(--text); }
-      .sheet { width: 100%; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
-      .header { display: grid; grid-template-columns: 1fr 170px 1fr; align-items: center; gap: 12px; border-bottom: 2px solid #2e8c84; padding-bottom: 10px; }
-      .gov { font-size: 25px; font-weight: 800; line-height: 1.45; color: #0f625d; }
-      .meta { text-align: center; font-size: 20px; font-weight: 800; color: #1a6962; }
-      .meta .sub { display: block; margin-top: 5px; font-size: 18px; }
-      .date { text-align: left; font-size: 22px; font-weight: 700; color: #276e69; }
-      .logo { width: 160px; max-height: 88px; object-fit: contain; display: block; margin: 0 auto; }
-      .title { margin: 10px 0 8px; text-align: center; font-size: 24px; font-weight: 800; color: #0f645e; }
-      .info-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-bottom: 9px; }
-      .info-card { border: 1px solid var(--line); border-radius: 999px; background: #f9fcfb; padding: 6px 10px; font-size: 18px; font-weight: 700; text-align: center; white-space: nowrap; }
-      .info-card strong { color: #0f5e58; }
-      .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
-      .metric { border: 1px solid var(--line); border-radius: 10px; background: var(--primary-soft); padding: 6px 8px; text-align: center; }
-      .metric .label { font-size: 14px; font-weight: 700; color: #2a6a66; }
-      .metric .value { font-size: 20px; font-weight: 800; color: var(--primary); margin-top: 2px; }
-      table { width: 100%; border-collapse: collapse; table-layout: fixed; border: 1px solid var(--line); }
-      th, td { border: 1px solid var(--line); padding: 6px 7px; vertical-align: top; font-size: 13px; line-height: 1.3; }
-      th { background: #16766f; color: #fff; font-weight: 800; font-size: 13px; text-align: center; }
-      td { background: #fff; }
-      tbody tr:nth-child(even) td { background: #f8fbfa; }
-      .col-indicator { width: 24%; font-weight: 700; color: #125954; }
-      .col-evidence { width: 18%; }
-      .col-docs { width: 18%; }
-      .col-notes { width: 14%; }
-      .footer { margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-      .sign-box { border: 1px dashed #b8cfca; border-radius: 10px; min-height: 58px; padding: 8px; font-weight: 700; color: #205e58; text-align: center; }
-      .empty { text-align:center; font-size: 18px; border: 1px dashed #c5d9d4; border-radius: 10px; padding: 18px; background:#fbfdfc; }
-      @media print {
-        body { background: #fff; }
-        .sheet { border: 0; border-radius: 0; padding: 0; }
+      * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      body { 
+          font-family: 'Tajawal', sans-serif; 
+          margin: 0; 
+          background: #fff; 
+          color: var(--text-dark);
+          font-size: 11px; /* تصغير الخط لاستيعاب المحتوى */
       }
+      
+      .sheet { width: 100%; padding: 0; }
+
+      /* --- Header --- */
+      .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid var(--teal-dark);
+        padding-bottom: 15px;
+        margin-bottom: 15px;
+      }
+      .header-side { text-align: center; width: 250px; }
+      .header-side h3 { margin: 0; font-size: 14px; color: var(--teal-dark); font-weight: 800; line-height: 1.6; }
+      .header-side p { margin: 2px 0; font-size: 12px; font-weight: 600; }
+      
+      .logo-box img { width: 140px; height: auto; }
+
+      /* --- Info Bar (like the reference image) --- */
+      .info-bar {
+          display: flex;
+          background: #fff;
+          border: 1px solid var(--border-color);
+          border-radius: 12px;
+          margin-bottom: 15px;
+          overflow: hidden;
+      }
+      .info-item {
+          flex: 1;
+          padding: 8px 15px;
+          border-left: 1px solid var(--border-color);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+      }
+      .info-item:last-child { border-left: none; }
+      .info-label { font-size: 10px; color: #666; font-weight: 700; margin-bottom: 2px; }
+      .info-val { font-size: 13px; color: var(--teal-dark); font-weight: 800; }
+      
+      .progress-box { background: var(--teal-light); }
+
+      /* --- Table --- */
+      table { 
+          width: 100%; 
+          border-collapse: collapse; 
+          border: 1px solid var(--border-color);
+          table-layout: fixed; /* تثبيت العرض لمنع التمدد */
+      }
+      
+      th {
+          background-color: var(--teal-med);
+          color: #fff;
+          padding: 8px 5px;
+          font-size: 11px;
+          font-weight: 700;
+          border: 1px solid #0b4d48;
+          text-align: center;
+      }
+
+      td {
+          padding: 6px 8px;
+          border: 1px solid #dcecea;
+          vertical-align: top;
+          font-size: 11px;
+          line-height: 1.4;
+      }
+
+      /* Row styling */
+      tr:nth-child(even) td { background-color: #fcfdfd; }
+      
+      .row-standard td {
+          background-color: #ebf5f4;
+          color: var(--teal-dark);
+          font-weight: 800;
+          font-size: 12px;
+          border-bottom: 2px solid var(--border-color);
+          padding-top: 10px;
+          padding-bottom: 5px;
+      }
+
+      /* Column Widths (optimized for landscape) */
+      .col-indicator { width: 22%; }
+      .col-evidence  { width: 22%; }
+      .col-docs      { width: 18%; }
+      .col-status    { width: 10%; }
+      .col-avail     { width: 10%; }
+      .col-eval      { width: 6%; }
+      .col-notes     { width: 12%; }
+
+      /* Inner Cell Styling */
+      .code-box {
+          display: inline-block;
+          background: var(--teal-light);
+          color: var(--teal-dark);
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-weight: 800;
+          font-size: 10px;
+          margin-bottom: 4px;
+      }
+      .ind-text { font-weight: 700; color: #222; }
+      
+      .small-text { font-size: 10px; color: #444; }
+      .center-text { text-align: center; vertical-align: middle; font-weight: 600; }
+
+      /* --- Footer --- */
+      .footer-sigs {
+          margin-top: 30px;
+          display: flex;
+          justify-content: space-between;
+          padding: 0 50px;
+          page-break-inside: avoid;
+      }
+      .sig-block {
+          text-align: center;
+          width: 200px;
+      }
+      .sig-title { font-weight: 700; color: var(--teal-dark); margin-bottom: 40px; }
+      .sig-line { border-top: 1px dashed #999; width: 100%; display: block; }
+
     </style>
-    </head><body>
+    </head>
+    <body>
       <main class="sheet">
-        <header class="header">
-          <section class="gov">المملكة العربية السعودية<br/>وزارة التعليم</section>
-          <img class="logo" src="وزارة التعليم.png" alt="شعار وزارة التعليم" />
-          <section class="date">${esc(exportDate)}<br/>نموذج المتابعة المستمرة</section>
+        
+        <header class="header-container">
+            <div class="header-side" style="text-align: right;">
+                <h3>المملكة العربية السعودية<br>وزارة التعليم<br>الإدارة العامة للتعليم بالمنطقة الشرقية</h3>
+            </div>
+            <div class="logo-box">
+                <img src="وزارة التعليم.png" alt="Logo">
+            </div>
+            <div class="header-side" style="text-align: left;">
+                <h3>نموذج المتابعة المستمرة<br>تقرير الاعتماد المدرسي</h3>
+                <p>تاريخ الإصدار: ${esc(exportDate)}</p>
+            </div>
         </header>
 
-        <h1 class="title">تقرير الاستمارة المستقلة</h1>
-
-        <section class="meta">
-          ${esc(state.regionName)}
-          <span class="sub">${esc(state.schoolName)}</span>
-        </section>
-
-        <section class="info-grid">
-          <div class="info-card"><strong>المجال:</strong> ${esc(state.filterDomain)}</div>
-          <div class="info-card"><strong>المعيار:</strong> ${esc(state.filterStandard)}</div>
-          <div class="info-card"><strong>عدد المؤشرات:</strong> ${items.length}</div>
-          <div class="info-card"><strong>مؤشر الإنجاز:</strong> ${completionRate}%</div>
-          <div class="info-card"><strong>وضع الصفحة:</strong> أفقي</div>
-        </section>
-
-        <section class="metrics">
-          <div class="metric"><div class="label">مكتمل</div><div class="value">${completed}</div></div>
-          <div class="metric"><div class="label">قيد التنفيذ</div><div class="value">${inProgress}</div></div>
-          <div class="metric"><div class="label">لم يبدأ</div><div class="value">${pending}</div></div>
-          <div class="metric"><div class="label">نسبة الإنجاز</div><div class="value">${completionRate}%</div></div>
-        </section>
+        <div class="info-bar">
+            <div class="info-item">
+                <span class="info-label">اسم المدرسة</span>
+                <span class="info-val">${esc(state.schoolName)}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">المجال</span>
+                <span class="info-val">${esc(state.filterDomain)}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">المعيار المختار</span>
+                <span class="info-val">${esc(state.filterStandard)}</span>
+            </div>
+             <div class="info-item">
+                <span class="info-label">عدد المؤشرات</span>
+                <span class="info-val">${items.length}</span>
+            </div>
+            <div class="info-item progress-box">
+                <span class="info-label">نسبة الإنجاز</span>
+                <span class="info-val">${completionRate}%</span>
+            </div>
+        </div>
 
         ${items.length ? `
           <table>
             <thead>
               <tr>
-                <th class="col-indicator">رقم ونص المؤشر</th>
+                <th class="col-indicator">المؤشر</th>
                 <th class="col-evidence">الشواهد المتوقعة</th>
                 <th class="col-docs">الوثائق</th>
-                <th>حالة الإنجاز</th>
-                <th>توفر الشواهد</th>
-                <th>التقييم الذاتي</th>
-                <th>المسؤول عن التنفيذ</th>
-                <th class="col-notes">ملاحظات التحسين</th>
+                <th class="col-status">حالة الإنجاز</th>
+                <th class="col-avail">توفر الأدلة</th>
+                <th class="col-eval">التقييم</th>
+                <th class="col-notes">ملاحظات</th>
               </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
           </table>
-        ` : '<div class="empty">لا توجد مؤشرات مطابقة للفلاتر الحالية.</div>'}
+        ` : '<div style="text-align:center; padding: 50px;">لا توجد مؤشرات مطابقة للفلاتر الحالية.</div>'}
 
-        <section class="footer">
-          <div class="sign-box">اعتماد مدير المدرسة<br/>....................................</div>
-          <div class="sign-box">توقيع فريق الجودة والمتابعة<br/>....................................</div>
-        </section>
+        <div class="footer-sigs">
+            <div class="sig-block">
+                <div class="sig-title">قائد/ة المدرسة</div>
+                <span class="sig-line"></span>
+            </div>
+            <div class="sig-block">
+                <div class="sig-title">مشرف/ة الجودة</div>
+                <span class="sig-line"></span>
+            </div>
+        </div>
+
       </main>
-    </body></html>
+      <script>
+        // طباعة تلقائية عند الفتح
+        setTimeout(() => { window.print(); }, 1000);
+      </script>
+    </body>
+    </html>
   `);
   popup.document.close();
 });
