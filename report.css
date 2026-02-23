@@ -11,7 +11,7 @@ body { margin: 0; background: #ecefef; color: #1f4e4a; font-family: "Tajawal", s
 
 .header {
   display: grid;
-  grid-template-columns: 330px 1fr 230px;
+  grid-template-columns: 300px 1fr 220px;
   align-items: center;
   border-bottom: 2px solid #2b8a84;
   padding-bottom: 0.8rem;
@@ -19,14 +19,14 @@ body { margin: 0; background: #ecefef; color: #1f4e4a; font-family: "Tajawal", s
   gap: 0.7rem;
 }
 .line { margin: 0 0 0.32rem; font-weight: 800; font-size: 1.05rem; color: #0d5a55; }
-.logo-wrap { text-align: center; }
-.moe-logo { width: 310px; max-width: 100%; height: auto; object-fit: contain; }
-.header-main .line { font-size: 0.95rem; line-height: 1.45; }
+.logo-wrap { display: flex; align-items: center; justify-content: center; min-height: 150px; }
+.moe-logo { width: min(280px, 100%); max-height: 150px; height: auto; object-fit: contain; display: block; }
+.header-main .line { font-size: 0.9rem; line-height: 1.45; }
 .header-main .line:first-child,
-.header-main .line:nth-child(2) { font-size: 1.15rem; }
-.line-editable { display: flex; align-items: center; gap: 0.45rem; }
+.header-main .line:nth-child(2) { font-size: 1.25rem; }
+.line-editable { display: flex; align-items: center; justify-content: center; gap: 0.45rem; }
 .edit-btn { border: none; background: transparent; color: #0f6a63; cursor: pointer; font-size: 1rem; }
-.left-col .line { text-align: left; font-size: 0.95rem; color: #2e6662; }
+.left-col .line { text-align: left; font-size: 0.9rem; color: #2e6662; }
 .header-actions { display: flex; justify-content: flex-start; }
 .round-btn { width: 30px; height: 30px; border-radius: 999px; border: 1px solid var(--line); background: #eaf3f1; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; color: var(--ink-soft); }
 
@@ -87,6 +87,7 @@ details[open] summary {
 
 @media (max-width: 900px) {
   .header { grid-template-columns: 1fr; text-align: center; gap: 0.45rem; }
-  .header-main .line { font-size: 1.25rem; justify-content: center; }
+  .moe-logo { width: 220px; max-height: 125px; }
+  .header-main .line { font-size: 1rem; justify-content: center; }
   .left-col .line, .header-actions { justify-content: center; text-align: center; }
 }
