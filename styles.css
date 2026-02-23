@@ -677,3 +677,47 @@ pre {
     font-size: 1.6rem;
   }
 }
+
+.backup-panel h2 {
+  margin-top: 0;
+}
+
+.backup-note {
+  margin: 0.3rem 0 0.9rem;
+  color: var(--muted);
+}
+
+.backup-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.backup-btn {
+  border: none;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #f8fbfb;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  font-family: "Cairo", "Tajawal", sans-serif;
+}
+
+.backup-btn:hover {
+  background: var(--primary-strong);
+}
+
+.backup-btn-outline {
+  background: #fff;
+  border: 1px solid #b6c8c9;
+  color: #245f66;
+}
+
+.backup-btn-outline:hover {
+  background: #f2f6f6;
+}
+
+.backup-status {
+  margin: 0.8rem 0 0;
+  font-weight: 600;
+}
