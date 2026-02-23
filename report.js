@@ -148,7 +148,7 @@ function renderRows() {
       const score = scoreFor(idx);
       const weight = weights[idx];
       return `
-      <tr>
+      <tr class="score-${score}">
         <td class="item-cell">${idx + 1} — ${item}</td>
         <td>${weight}%</td>
         <td>
