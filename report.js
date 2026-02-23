@@ -52,6 +52,8 @@ const allDomains = [...new Set(indicators.map((i) => i.domain))];
 const state = {
   filterDomain: persisted.filterDomain || allDomains[0],
   filterStandard: persisted.filterStandard || 'الكل',
+  regionName: persisted.regionName || 'الإدارة العامة للتعليم بالمنطقة الشرقية',
+  schoolName: persisted.schoolName || 'اسم المدرسة هنا',
   rows: persisted.rows || {}
 };
 
@@ -81,6 +83,23 @@ function todayAr() {
 }
 
 document.getElementById('todayLine').textContent = todayAr();
+
+function renderHeaderMeta() {
+  document.getElementById('regionName').textContent = state.regionName;
+  document.getElementById('schoolName').textContent = state.schoolName;
+}
+
+function editHeaderValue(key, label) {
+  const current = state[key] || '';
+  const next = window.prompt(`تعديل ${label}`, current);
+  if (next === null) return;
+  const clean = next.trim();
+  if (!clean) return;
+  state[key] = clean;
+  save();
+  renderHeaderMeta();
+}
+
 
 function rowState(code) {
   return state.rows[code] || {
@@ -201,6 +220,16 @@ domainFilter.addEventListener('change', () => {
   save();
   render();
 });
+
+document.getElementById('editRegion')?.addEventListener('click', () => {
+  editHeaderValue('regionName', 'المنطقة التعليمية');
+});
+
+document.getElementById('editSchool')?.addEventListener('click', () => {
+  editHeaderValue('schoolName', 'اسم المدرسة');
+});
+
+renderHeaderMeta();
 
 standardFilter.addEventListener('change', () => {
   state.filterStandard = standardFilter.value;
