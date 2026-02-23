@@ -211,9 +211,10 @@ button {
 .indicator-heading {
   margin: 1.35rem 0 0;
   font-family: "Tajawal", sans-serif;
-  font-size: 22px;
-  line-height: 1.55;
-  font-weight: 300;
+  /* MANUAL TUNING NOTE: Change font-size/font-weight/line-height here to adjust the indicator title typography. */
+  font-size: 26px;
+  line-height: 1.35;
+  font-weight: 700;
   color: #24484d;
   max-width: 100%;
   word-break: break-word;
