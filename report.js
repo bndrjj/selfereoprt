@@ -60,6 +60,7 @@ const state = {
 const statusOptions = ['مكتمل', 'قيد التنفيذ', 'لم يبدأ'];
 const availOptions = ['متوفرة بالكامل', 'متوفرة جزئياً', 'غير متوفرة'];
 const selfEvalOptions = ['4', '3', '2', '1'];
+const ownerOptions = ['فريق التميز', 'مدير المدرسة', 'المرشد الطلابي', 'رائد النشاط', 'معلمين المواد'];
 
 const domainFilter = document.getElementById('domainFilter');
 const standardFilter = document.getElementById('standardFilter');
@@ -134,34 +135,11 @@ function fillFilters() {
   standardFilter.value = state.filterStandard;
 }
 
-function renderRows() {
-  const indicators = activeStandard().indicators;
-  const weights = weightList(indicators.length);
-
-  rowsEl.innerHTML = indicators
-    .map((item, idx) => {
-      const score = scoreFor(idx);
-      const weight = weights[idx];
-      return `
-      <tr class="score-${score}">
-        <td class="item-cell">${idx + 1} — ${item}</td>
-        <td>${weight}%</td>
-        <td>
-          <select class="score-select" data-idx="${idx}">
-            ${[1, 2, 3, 4, 5].map((n) => `<option value="${n}" ${score === n ? "selected" : ""}>${n}</option>`).join("")}
-          </select>
-        </td>
-        <td>${weightedValue(score, weight)}</td>
-      </tr>`;
-    })
-    .join("");
-
-  rowsEl.querySelectorAll(".score-select").forEach((select) => {
-    select.addEventListener("change", () => {
-      state.scores[indicatorKey(Number(select.dataset.idx))] = Number(select.value);
-      saveState();
-      render();
-    });
+function getFilteredIndicators() {
+  return indicators.filter((item) => {
+    const byDomain = item.domain === state.filterDomain;
+    const byStandard = state.filterStandard === 'الكل' || item.standard === state.filterStandard;
+    return byDomain && byStandard;
   });
 }
 
@@ -214,7 +192,9 @@ function renderRows() {
             </select>
           </td>
           <td>
-            <input class="row-input" data-code="${item.code}" data-key="owner" value="${esc(current.owner)}" placeholder="اسم المسؤول" />
+            <select class="row-select" data-code="${item.code}" data-key="owner">
+              ${optionList(ownerOptions, current.owner)}
+            </select>
           </td>
           <td>
             <textarea class="row-textarea" data-code="${item.code}" data-key="notes" placeholder="الإجراء التصحيحي">${esc(current.notes)}</textarea>
@@ -224,7 +204,7 @@ function renderRows() {
     })
     .join('');
 
-  rowsEl.querySelectorAll('select.row-select, input.row-input, textarea.row-textarea').forEach((el) => {
+  rowsEl.querySelectorAll('select.row-select, textarea.row-textarea').forEach((el) => {
     const handler = () => setRowValue(el.dataset.code, el.dataset.key, el.value);
     el.addEventListener('change', handler);
     if (el.tagName !== 'SELECT') el.addEventListener('input', handler);
@@ -275,21 +255,128 @@ document.getElementById('clearBtn').addEventListener('click', () => {
 
 document.getElementById('exportBtn').addEventListener('click', () => {
   const items = getFilteredIndicators();
+  const completed = items.filter((i) => rowState(i.code).status === 'مكتمل').length;
+  const inProgress = items.filter((i) => rowState(i.code).status === 'قيد التنفيذ').length;
+  const pending = items.filter((i) => rowState(i.code).status === 'لم يبدأ').length;
+  const completionRate = items.length ? Math.round((completed / items.length) * 100) : 0;
+  const exportDate = todayAr();
+
+  const rowsHtml = items.map((item) => {
+    const current = rowState(item.code);
+    return `
+      <tr>
+        <td class="col-indicator">(${esc(item.code)}) ${esc(item.text)}</td>
+        <td class="col-evidence">${esc(item.evidence)}</td>
+        <td class="col-docs">${esc(item.docs)}</td>
+        <td>${esc(current.status)}</td>
+        <td>${esc(current.availability)}</td>
+        <td>${esc(current.selfEval)}</td>
+        <td>${esc(current.owner || '-')}</td>
+        <td class="col-notes">${esc(current.notes || '-')}</td>
+      </tr>
+    `;
+  }).join('');
+
   const popup = window.open('', '_blank', 'width=1400,height=900');
   if (!popup) return;
   popup.document.write(`
     <html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير التصدير</title>
-    <style>body{font-family:Tajawal,sans-serif;padding:16px;background:#f6f8f7;color:#155a55}table{width:100%;border-collapse:collapse}th,td{border:1px solid #bcd2ce;padding:7px;vertical-align:top;font-size:13px}th{background:#1a8079;color:#fff}</style>
+    <style>
+      @page { size: A4 landscape; margin: 10mm; }
+      :root {
+        --primary:#136c65;
+        --primary-soft:#eaf6f4;
+        --line:#cfe2de;
+        --text:#164c49;
+      }
+      * { box-sizing: border-box; }
+      body { font-family: Tajawal, sans-serif; margin: 0; background: #f2f6f5; color: var(--text); }
+      .sheet { width: 100%; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+      .header { display: grid; grid-template-columns: 1fr 170px 1fr; align-items: center; gap: 12px; border-bottom: 2px solid #2e8c84; padding-bottom: 10px; }
+      .gov { font-size: 25px; font-weight: 800; line-height: 1.45; color: #0f625d; }
+      .meta { text-align: center; font-size: 20px; font-weight: 800; color: #1a6962; }
+      .meta .sub { display: block; margin-top: 5px; font-size: 18px; }
+      .date { text-align: left; font-size: 22px; font-weight: 700; color: #276e69; }
+      .logo { width: 160px; max-height: 88px; object-fit: contain; display: block; margin: 0 auto; }
+      .title { margin: 10px 0 8px; text-align: center; font-size: 24px; font-weight: 800; color: #0f645e; }
+      .info-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-bottom: 9px; }
+      .info-card { border: 1px solid var(--line); border-radius: 999px; background: #f9fcfb; padding: 6px 10px; font-size: 18px; font-weight: 700; text-align: center; white-space: nowrap; }
+      .info-card strong { color: #0f5e58; }
+      .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+      .metric { border: 1px solid var(--line); border-radius: 10px; background: var(--primary-soft); padding: 6px 8px; text-align: center; }
+      .metric .label { font-size: 14px; font-weight: 700; color: #2a6a66; }
+      .metric .value { font-size: 20px; font-weight: 800; color: var(--primary); margin-top: 2px; }
+      table { width: 100%; border-collapse: collapse; table-layout: fixed; border: 1px solid var(--line); }
+      th, td { border: 1px solid var(--line); padding: 6px 7px; vertical-align: top; font-size: 13px; line-height: 1.3; }
+      th { background: #16766f; color: #fff; font-weight: 800; font-size: 13px; text-align: center; }
+      td { background: #fff; }
+      tbody tr:nth-child(even) td { background: #f8fbfa; }
+      .col-indicator { width: 24%; font-weight: 700; color: #125954; }
+      .col-evidence { width: 18%; }
+      .col-docs { width: 18%; }
+      .col-notes { width: 14%; }
+      .footer { margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .sign-box { border: 1px dashed #b8cfca; border-radius: 10px; min-height: 58px; padding: 8px; font-weight: 700; color: #205e58; text-align: center; }
+      .empty { text-align:center; font-size: 18px; border: 1px dashed #c5d9d4; border-radius: 10px; padding: 18px; background:#fbfdfc; }
+      @media print {
+        body { background: #fff; }
+        .sheet { border: 0; border-radius: 0; padding: 0; }
+      }
+    </style>
     </head><body>
-    <h2>تقرير التصدير - استمارة التحقق</h2>
-    <p>المجال: ${esc(state.filterDomain)} | المعيار: ${esc(state.filterStandard)}</p>
-    <table><thead><tr><th>المجال</th><th>المعيار</th><th>رقم ونص المؤشر</th><th>حالة الإنجاز</th><th>توفر الشواهد والوثائق</th><th>التقييم الذاتي</th><th>المسؤول</th><th>ملاحظات التحسين</th></tr></thead>
-    <tbody>
-      ${items.map((item) => {
-        const current = rowState(item.code);
-        return `<tr><td>${esc(item.domain)}</td><td>${esc(item.standard)}</td><td>(${esc(item.code)}) ${esc(item.text)}</td><td>${esc(current.status)}</td><td>${esc(current.availability)}</td><td>${esc(current.selfEval)}</td><td>${esc(current.owner || '-')}</td><td>${esc(current.notes || '-')}</td></tr>`;
-      }).join('')}
-    </tbody></table></body></html>
+      <main class="sheet">
+        <header class="header">
+          <section class="gov">المملكة العربية السعودية<br/>وزارة التعليم</section>
+          <img class="logo" src="وزارة التعليم.png" alt="شعار وزارة التعليم" />
+          <section class="date">${esc(exportDate)}<br/>نموذج المتابعة المستمرة</section>
+        </header>
+
+        <h1 class="title">تقرير الاستمارة المستقلة</h1>
+
+        <section class="meta">
+          ${esc(state.regionName)}
+          <span class="sub">${esc(state.schoolName)}</span>
+        </section>
+
+        <section class="info-grid">
+          <div class="info-card"><strong>المجال:</strong> ${esc(state.filterDomain)}</div>
+          <div class="info-card"><strong>المعيار:</strong> ${esc(state.filterStandard)}</div>
+          <div class="info-card"><strong>عدد المؤشرات:</strong> ${items.length}</div>
+          <div class="info-card"><strong>مؤشر الإنجاز:</strong> ${completionRate}%</div>
+          <div class="info-card"><strong>وضع الصفحة:</strong> أفقي</div>
+        </section>
+
+        <section class="metrics">
+          <div class="metric"><div class="label">مكتمل</div><div class="value">${completed}</div></div>
+          <div class="metric"><div class="label">قيد التنفيذ</div><div class="value">${inProgress}</div></div>
+          <div class="metric"><div class="label">لم يبدأ</div><div class="value">${pending}</div></div>
+          <div class="metric"><div class="label">نسبة الإنجاز</div><div class="value">${completionRate}%</div></div>
+        </section>
+
+        ${items.length ? `
+          <table>
+            <thead>
+              <tr>
+                <th class="col-indicator">رقم ونص المؤشر</th>
+                <th class="col-evidence">الشواهد المتوقعة</th>
+                <th class="col-docs">الوثائق</th>
+                <th>حالة الإنجاز</th>
+                <th>توفر الشواهد</th>
+                <th>التقييم الذاتي</th>
+                <th>المسؤول عن التنفيذ</th>
+                <th class="col-notes">ملاحظات التحسين</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        ` : '<div class="empty">لا توجد مؤشرات مطابقة للفلاتر الحالية.</div>'}
+
+        <section class="footer">
+          <div class="sign-box">اعتماد مدير المدرسة<br/>....................................</div>
+          <div class="sign-box">توقيع فريق الجودة والمتابعة<br/>....................................</div>
+        </section>
+      </main>
+    </body></html>
   `);
   popup.document.close();
 });
