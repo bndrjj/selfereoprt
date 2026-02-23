@@ -199,7 +199,8 @@ button {
 .indicator-code {
   margin: 0;
   font-family: "Tajawal", sans-serif;
-  font-size: 20px;
+  /* MANUAL TUNING NOTE: Change font-size/font-weight/line-height here to adjust the indicator code typography. */
+  font-size: 26px;
   font-weight: 700;
   line-height: 1.1;
   letter-spacing: 0.5px;
