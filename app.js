@@ -138,12 +138,98 @@ const state = {
 };
 
 const dashboardEl = document.getElementById("dashboard");
+const backupPanelEl = document.getElementById("backup-panel");
 const breadcrumbsEl = document.getElementById("breadcrumbs");
 const listViewEl = document.getElementById("list-view");
 const detailViewEl = document.getElementById("detail-view");
 
 function save() {
   localStorage.setItem(storageKey, JSON.stringify({ checks: state.checks }));
+}
+
+function createBackupPayload() {
+  return {
+    version: 1,
+    app: "school-quality-tracker",
+    exportedAt: new Date().toISOString(),
+    checks: state.checks
+  };
+}
+
+function normalizeChecks(rawChecks) {
+  const normalized = {};
+  if (!rawChecks || typeof rawChecks !== "object") return normalized;
+
+  for (const [indicatorId, value] of Object.entries(rawChecks)) {
+    const evidence = Array.isArray(value?.evidence) ? [...new Set(value.evidence.filter(Number.isInteger))] : [];
+    const documents = Array.isArray(value?.documents) ? [...new Set(value.documents.filter(Number.isInteger))] : [];
+    normalized[indicatorId] = {
+      evidence: evidence.sort((a, b) => a - b),
+      documents: documents.sort((a, b) => a - b)
+    };
+  }
+
+  return normalized;
+}
+
+function restoreFromBackupPayload(payload) {
+  if (!payload || typeof payload !== "object" || !payload.checks || typeof payload.checks !== "object") {
+    throw new Error("ملف النسخة الاحتياطية غير صالح.");
+  }
+
+  state.checks = normalizeChecks(payload.checks);
+  save();
+  render();
+}
+
+function downloadBackupFile() {
+  const payload = createBackupPayload();
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const date = new Date().toISOString().slice(0, 10);
+  link.href = url;
+  link.download = `school-quality-backup-${date}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function renderBackupPanel() {
+  backupPanelEl.innerHTML = `
+    <h2>حفظ ومشاركة التقدم</h2>
+    <p class="backup-note">احفظ نسخة احتياطية كاملة من جميع المؤشرات ثم استعدها لاحقًا على أي جهاز أو مع أي عضو في الفريق.</p>
+    <div class="backup-actions">
+      <button class="backup-btn" data-backup="download">نسخة احتياطية</button>
+      <label class="backup-btn backup-btn-outline" for="backup-file-input">استعادة نسخة من ملف</label>
+      <input id="backup-file-input" type="file" accept="application/json" hidden />
+    </div>
+    <p id="backup-status" class="backup-status" aria-live="polite"></p>
+  `;
+
+  const statusEl = backupPanelEl.querySelector("#backup-status");
+
+  backupPanelEl.querySelector('[data-backup="download"]')?.addEventListener("click", () => {
+    downloadBackupFile();
+    statusEl.textContent = "✅ تم تنزيل النسخة الاحتياطية بنجاح. شارك الملف مع الفريق لاستعادة نفس التقدم.";
+  });
+
+  backupPanelEl.querySelector("#backup-file-input")?.addEventListener("change", async (event) => {
+    const [file] = event.target.files || [];
+    if (!file) return;
+
+    try {
+      const content = await file.text();
+      const payload = JSON.parse(content);
+      restoreFromBackupPayload(payload);
+      statusEl.textContent = "✅ تم استعادة النسخة الاحتياطية وتحديث جميع المؤشرات.";
+    } catch (error) {
+      statusEl.textContent = `❌ فشل الاستعادة: ${error.message || "تحقق من صحة الملف"}`;
+    } finally {
+      event.target.value = "";
+    }
+  });
 }
 
 function flattenIndicators() {
@@ -473,6 +559,7 @@ function renderDetail() {
 
 function render() {
   renderDashboard();
+  renderBackupPanel();
   renderBreadcrumbs();
 
   if (!state.domain) {
