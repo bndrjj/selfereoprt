@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>استمارة التحقق | تقرير الاعتماد</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="report.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="header">
+        <section class="hcol">
+          <p class="line">المملكة العربية السعودية</p>
+          <p class="line">وزارة التعليم</p>
+          <p class="line">الإدارة العامة للتعليم</p>
+          <p class="line">اسم المدرسة: <span id="schoolName">مدرستي</span></p>
+        </section>
+        <section class="logo-wrap">
+          <strong>استمارة التحقق</strong>
+          <small>المجالات ← المعايير ← المؤشرات</small>
+        </section>
+        <section class="hcol left-col">
+          <p class="line" id="todayLine"></p>
+          <p class="line">نموذج المتابعة المستمرة</p>
+          <div class="header-actions">
+            <a class="round-btn" href="index.html" title="العودة للرئيسية">⌂</a>
+          </div>
+        </section>
+      </header>
+
+      <section class="toolbar noprint">
+        <label class="sel"><select id="domainFilter"></select><span>▾</span></label>
+        <label class="sel"><select id="standardFilter"></select><span>▾</span></label>
+        <button class="btn" id="saveBtn">💾 حفظ</button>
+        <button class="btn" id="exportBtn">📤 تقرير التصدير</button>
+        <button class="btn secondary" id="printBtn">🖨️ طباعة</button>
+        <button class="btn warn" id="clearBtn">🧹 مسح</button>
+      </section>
+
+      <section class="summary" id="summary"></section>
+
+      <section class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>المجال</th>
+              <th>المعيار</th>
+              <th>رقم ونص المؤشر</th>
+              <th>الشواهد المتوقعة</th>
+              <th>الوثائق</th>
+              <th>حالة الإنجاز</th>
+              <th>توفر الشواهد والوثائق</th>
+              <th>التقييم الذاتي</th>
+              <th>المسؤول عن التنفيذ</th>
+              <th>ملاحظات التحسين</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </section>
+    </main>
+
+    <script src="report.js"></script>
+  </body>
+</html>
