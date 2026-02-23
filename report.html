@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>استمارة التحقق | تقرير الاعتماد</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="report.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="header">
+        <section class="logo-wrap">
+          <img class="moe-logo" src="وزارة التعليم.png" alt="شعار وزارة التعليم" onerror="this.hidden=true;document.getElementById('moeLogoFallback').hidden=false;" />
+          <svg id="moeLogoFallback" class="moe-logo" viewBox="0 0 300 170" aria-hidden="true" hidden>
+            <g fill="#17a7a0">
+              <circle cx="20" cy="20" r="7"/><circle cx="45" cy="22" r="7"/><circle cx="70" cy="24" r="7"/><circle cx="95" cy="28" r="7"/><circle cx="120" cy="36" r="6"/>
+              <circle cx="20" cy="50" r="7"/><circle cx="45" cy="52" r="7"/><circle cx="70" cy="54" r="7"/><circle cx="95" cy="58" r="7"/><circle cx="120" cy="66" r="6"/>
+              <circle cx="280" cy="20" r="7"/><circle cx="255" cy="22" r="7"/><circle cx="230" cy="24" r="7"/><circle cx="205" cy="28" r="7"/><circle cx="180" cy="36" r="6"/>
+              <circle cx="280" cy="50" r="7"/><circle cx="255" cy="52" r="7"/><circle cx="230" cy="54" r="7"/><circle cx="205" cy="58" r="7"/><circle cx="180" cy="66" r="6"/>
+            </g>
+            <text x="150" y="122" text-anchor="middle" fill="#17a7a0" font-family="Tajawal" font-weight="800" font-size="44">وزارة التعليم</text>
+            <text x="150" y="152" text-anchor="middle" fill="#a6a6a6" font-family="Tajawal" font-weight="700" font-size="26">Ministry of Education</text>
+          </svg>
+        </section>
+
+        <section class="hcol header-main">
+          <p class="line">المملكة العربية السعودية</p>
+          <p class="line">وزارة التعليم</p>
+          <p class="line line-editable">
+            <span id="regionName">الإدارة العامة للتعليم بالمنطقة الشرقية</span>
+            <button class="edit-btn noprint" id="editRegion" type="button" title="تعديل المنطقة">✎</button>
+          </p>
+          <p class="line line-editable">
+            <span id="schoolName">اسم المدرسة هنا</span>
+            <button class="edit-btn noprint" id="editSchool" type="button" title="تعديل اسم المدرسة">✎</button>
+          </p>
+        </section>
+
+        <section class="hcol left-col">
+          <p class="line" id="todayLine"></p>
+          <p class="line">نموذج المتابعة المستمرة</p>
+          <div class="header-actions">
+            <a class="round-btn" href="index.html" title="العودة للرئيسية">⌂</a>
+          </div>
+        </section>
+      </header>
+
+      <section class="toolbar noprint">
+        <label class="sel"><select id="domainFilter"></select><span>▾</span></label>
+        <label class="sel"><select id="standardFilter"></select><span>▾</span></label>
+        <button class="btn" id="saveBtn">💾 حفظ</button>
+        <button class="btn" id="exportBtn">📤 تقرير التصدير</button>
+        <button class="btn secondary" id="printBtn">🖨️ طباعة</button>
+        <button class="btn warn" id="clearBtn">🧹 مسح</button>
+      </section>
+
+      <section class="summary" id="summary"></section>
+
+      <section class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>المجال</th>
+              <th>المعيار</th>
+              <th>رقم ونص المؤشر</th>
+              <th>الشواهد المتوقعة</th>
+              <th>الوثائق</th>
+              <th>حالة الإنجاز</th>
+              <th>توفر الشواهد والوثائق</th>
+              <th>التقييم الذاتي</th>
+              <th>المسؤول عن التنفيذ</th>
+              <th>ملاحظات التحسين</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </section>
+    </main>
+
+    <script src="report.js"></script>
+  </body>
+</html>
