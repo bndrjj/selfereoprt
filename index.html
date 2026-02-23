@@ -32,41 +32,41 @@
       <section class="card" id="detail-view" hidden></section>
 
       <section class="card info-grid">
-        <article>
-          <h2>هيكل الجدول المقترح</h2>
-          <ul>
-            <li>المجال</li>
-            <li>المعيار</li>
-            <li>رقم المؤشر</li>
-            <li>نص المؤشر</li>
-            <li>الشواهد المتوقعة</li>
-            <li>الوثائق</li>
-            <li>حالة الإنجاز</li>
-            <li>توفر الشواهد والوثائق</li>
-            <li>التقييم الذاتي (1-4)</li>
-            <li>المسؤول عن التنفيذ</li>
-            <li>ملاحظات التحسين</li>
-          </ul>
-        </article>
+        <article class="evaluation-rules" aria-label="قواعد التقييم حسب عدد الأدلة">
+          <header class="evaluation-rules-head">
+            <h2>قواعد التقييم حسب عدد الأدلة المتوفرة</h2>
+            <p>إطار موحد لقياس مستوى تحقق المؤشر وفق عدد الشواهد والوثائق.</p>
+          </header>
 
-        <article>
-          <h2>معادلات Excel للـ Dashboard</h2>
-          <pre>
-=COUNTIF(Table1[حالة الإنجاز],"مكتمل")/ROWS(Table1[حالة الإنجاز])
-=COUNTIF(Table1[حالة الإنجاز],"مكتمل")
-=COUNTIF(Table1[حالة الإنجاز],"قيد التنفيذ")
-=COUNTIFS(Table1[المجال],"الإدارة المدرسية",Table1[حالة الإنجاز],"مكتمل")/COUNTIF(Table1[المجال],"الإدارة المدرسية")
-=AVERAGE(Table1[التقييم الذاتي])
-          </pre>
-        </article>
-
-        <article>
-          <h2>قواعد التقييم حسب عدد الأدلة المتوفرة</h2>
-          <ul class="levels">
-            <li><span class="dot low"></span> 🔴 متحقق بدرجة منخفضة: إذا توفر 2 فأقل</li>
-            <li><span class="dot med"></span> 🟠 متحقق بدرجة متوسطة: إذا توفر 3-4</li>
-            <li><span class="dot high"></span> 🟢 متحقق بدرجة مرتفعة: إذا توفر 5</li>
-            <li><span class="dot vhigh"></span> 🔵 متحقق بدرجة مرتفعة جداً: إذا توفر 6 فأكثر</li>
+          <ul class="levels levels-enhanced">
+            <li class="level-item">
+              <span class="level-badge">
+                <span class="dot low"></span>
+                <strong>منخفضة</strong>
+              </span>
+              <span class="level-text">متحقق بدرجة منخفضة — إذا توفر دليلان أو أقل.</span>
+            </li>
+            <li class="level-item">
+              <span class="level-badge">
+                <span class="dot med"></span>
+                <strong>متوسطة</strong>
+              </span>
+              <span class="level-text">متحقق بدرجة متوسطة — إذا توفر من 3 إلى 4 أدلة.</span>
+            </li>
+            <li class="level-item">
+              <span class="level-badge">
+                <span class="dot high"></span>
+                <strong>مرتفعة</strong>
+              </span>
+              <span class="level-text">متحقق بدرجة مرتفعة — إذا توفر 5 أدلة.</span>
+            </li>
+            <li class="level-item">
+              <span class="level-badge">
+                <span class="dot vhigh"></span>
+                <strong>مرتفعة جداً</strong>
+              </span>
+              <span class="level-text">متحقق بدرجة مرتفعة جداً — إذا توفر 6 أدلة فأكثر.</span>
+            </li>
           </ul>
         </article>
       </section>

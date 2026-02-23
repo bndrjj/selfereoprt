@@ -613,16 +613,60 @@ select {
 .info-grid {
   display: grid;
   gap: 0.8rem;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: minmax(280px, 1fr);
 }
 
-pre {
-  direction: ltr;
-  white-space: pre-wrap;
-  background: #274549;
-  color: #dde8e9;
-  padding: 0.7rem;
-  border-radius: 12px;
+.evaluation-rules {
+  background: linear-gradient(165deg, #fbfcfa 0%, #f3f6f2 100%);
+  border: 1px solid #d3ddd4;
+  border-radius: 16px;
+  padding: 1.1rem;
+}
+
+.evaluation-rules-head h2 {
+  margin: 0;
+  color: #24484d;
+}
+
+.evaluation-rules-head p {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+}
+
+.levels-enhanced {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.level-item {
+  border: 1px solid #d8dfd8;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 0.7rem 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.level-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  background: #eef3ef;
+  color: #24484d;
+  padding: 0.25rem 0.7rem;
+  min-width: 115px;
+}
+
+.level-text {
+  color: #2c4f53;
+  line-height: 1.55;
 }
 
 .dot {
