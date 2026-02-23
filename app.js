@@ -183,6 +183,20 @@ function statusBadge(id) {
   return statusFromCompletion(completionRate(indicator));
 }
 
+function standardStats(standard) {
+  const stats = { total: standard.indicators.length, done: 0, inProgress: 0, pending: 0 };
+
+  standard.indicators.forEach((indicator) => {
+    const status = statusFromCompletion(completionRate(indicator));
+    if (status === "منجز" || status === "مكتملة") stats.done += 1;
+    else if (status === "قيد التنفيذ") stats.inProgress += 1;
+    else stats.pending += 1;
+  });
+
+  const status = stats.done === stats.total ? "done" : stats.inProgress > 0 || stats.done > 0 ? "in-progress" : "pending";
+  return { ...stats, status };
+}
+
 function calcLevel(count) {
   if (count <= 2) return { cls: "level-low", text: "🔴 متحقق بدرجة منخفضة" };
   if (count <= 4) return { cls: "level-med", text: "🟠 متحقق بدرجة متوسطة" };
@@ -281,13 +295,24 @@ function renderStandards() {
   listViewEl.innerHTML = `
     <h2>الطبقة الثانية: معايير مجال ${state.domain.name}</h2>
     <div class="grid">${state.domain.standards
-      .map(
-        (s) => `<article class="item-card">
-          <h3>${s.name}</h3>
-          <p>${s.indicators.length} مؤشر</p>
+      .map((s) => {
+        const stats = standardStats(s);
+        const statusText = stats.status === "done" ? "مكتمل" : stats.status === "in-progress" ? "قيد التنفيذ" : "لم يبدأ";
+        return `<article class="item-card standard-card">
+          <h3>
+            <span class="standard-status-dot standard-status-${stats.status}" title="${statusText}"></span>
+            ${s.name}
+          </h3>
+          <p>${stats.total} مؤشر</p>
+          <div class="standard-stats">
+            <span class="standard-stat">الإجمالي: <strong>${stats.total}</strong></span>
+            <span class="standard-stat">المكتمل: <strong>${stats.done}</strong></span>
+            <span class="standard-stat">غير المكتمل: <strong>${stats.inProgress}</strong></span>
+            <span class="standard-stat">لم يبدأ: <strong>${stats.pending}</strong></span>
+          </div>
           <button data-standard="${s.id}">عرض المؤشرات</button>
-        </article>`
-      )
+        </article>`;
+      })
       .join("")}</div>`;
 
   listViewEl.querySelectorAll("[data-standard]").forEach((btn) => {

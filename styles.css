@@ -251,6 +251,54 @@ button {
   margin: 0.2rem 0 0.5rem;
 }
 
+
+.standard-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.standard-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px #f6f7f4;
+}
+
+.standard-status-done {
+  background: #5d9a73;
+}
+
+.standard-status-in-progress {
+  background: #d39b4a;
+}
+
+.standard-status-pending {
+  background: #adb7b6;
+}
+
+.standard-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+  gap: 0.35rem 0.6rem;
+  margin: 0.35rem 0 0.65rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.standard-stat {
+  background: #f5f6f3;
+  border: 1px solid #e2e5df;
+  border-radius: 10px;
+  padding: 0.25rem 0.45rem;
+}
+
+.standard-stat strong {
+  color: var(--primary-strong);
+}
+
 .indicator-card-head,
 .indicator-card-foot {
   border: 1.5px solid #cbceca;
