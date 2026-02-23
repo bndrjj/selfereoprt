@@ -60,6 +60,7 @@ const state = {
 const statusOptions = ['مكتمل', 'قيد التنفيذ', 'لم يبدأ'];
 const availOptions = ['متوفرة بالكامل', 'متوفرة جزئياً', 'غير متوفرة'];
 const selfEvalOptions = ['4', '3', '2', '1'];
+const ownerOptions = ['فريق التميز', 'مدير المدرسة', 'المرشد الطلابي', 'رائد النشاط', 'معلمين المواد'];
 
 const domainFilter = document.getElementById('domainFilter');
 const standardFilter = document.getElementById('standardFilter');
@@ -134,34 +135,11 @@ function fillFilters() {
   standardFilter.value = state.filterStandard;
 }
 
-function renderRows() {
-  const indicators = activeStandard().indicators;
-  const weights = weightList(indicators.length);
-
-  rowsEl.innerHTML = indicators
-    .map((item, idx) => {
-      const score = scoreFor(idx);
-      const weight = weights[idx];
-      return `
-      <tr class="score-${score}">
-        <td class="item-cell">${idx + 1} — ${item}</td>
-        <td>${weight}%</td>
-        <td>
-          <select class="score-select" data-idx="${idx}">
-            ${[1, 2, 3, 4, 5].map((n) => `<option value="${n}" ${score === n ? "selected" : ""}>${n}</option>`).join("")}
-          </select>
-        </td>
-        <td>${weightedValue(score, weight)}</td>
-      </tr>`;
-    })
-    .join("");
-
-  rowsEl.querySelectorAll(".score-select").forEach((select) => {
-    select.addEventListener("change", () => {
-      state.scores[indicatorKey(Number(select.dataset.idx))] = Number(select.value);
-      saveState();
-      render();
-    });
+function getFilteredIndicators() {
+  return indicators.filter((item) => {
+    const byDomain = item.domain === state.filterDomain;
+    const byStandard = state.filterStandard === 'الكل' || item.standard === state.filterStandard;
+    return byDomain && byStandard;
   });
 }
 
@@ -214,7 +192,9 @@ function renderRows() {
             </select>
           </td>
           <td>
-            <input class="row-input" data-code="${item.code}" data-key="owner" value="${esc(current.owner)}" placeholder="اسم المسؤول" />
+            <select class="row-select" data-code="${item.code}" data-key="owner">
+              ${optionList(ownerOptions, current.owner)}
+            </select>
           </td>
           <td>
             <textarea class="row-textarea" data-code="${item.code}" data-key="notes" placeholder="الإجراء التصحيحي">${esc(current.notes)}</textarea>
@@ -224,7 +204,7 @@ function renderRows() {
     })
     .join('');
 
-  rowsEl.querySelectorAll('select.row-select, input.row-input, textarea.row-textarea').forEach((el) => {
+  rowsEl.querySelectorAll('select.row-select, textarea.row-textarea').forEach((el) => {
     const handler = () => setRowValue(el.dataset.code, el.dataset.key, el.value);
     el.addEventListener('change', handler);
     if (el.tagName !== 'SELECT') el.addEventListener('input', handler);
