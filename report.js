@@ -134,11 +134,34 @@ function fillFilters() {
   standardFilter.value = state.filterStandard;
 }
 
-function getFilteredIndicators() {
-  return indicators.filter((item) => {
-    const byDomain = item.domain === state.filterDomain;
-    const byStandard = state.filterStandard === 'الكل' || item.standard === state.filterStandard;
-    return byDomain && byStandard;
+function renderRows() {
+  const indicators = activeStandard().indicators;
+  const weights = weightList(indicators.length);
+
+  rowsEl.innerHTML = indicators
+    .map((item, idx) => {
+      const score = scoreFor(idx);
+      const weight = weights[idx];
+      return `
+      <tr class="score-${score}">
+        <td class="item-cell">${idx + 1} — ${item}</td>
+        <td>${weight}%</td>
+        <td>
+          <select class="score-select" data-idx="${idx}">
+            ${[1, 2, 3, 4, 5].map((n) => `<option value="${n}" ${score === n ? "selected" : ""}>${n}</option>`).join("")}
+          </select>
+        </td>
+        <td>${weightedValue(score, weight)}</td>
+      </tr>`;
+    })
+    .join("");
+
+  rowsEl.querySelectorAll(".score-select").forEach((select) => {
+    select.addEventListener("change", () => {
+      state.scores[indicatorKey(Number(select.dataset.idx))] = Number(select.value);
+      saveState();
+      render();
+    });
   });
 }
 
