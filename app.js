@@ -134,7 +134,6 @@ const state = {
   domain: null,
   standard: null,
   selectedIndicator: null,
-  statuses: persisted.statuses || {},
   checks: persisted.checks || {}
 };
 
@@ -144,7 +143,7 @@ const listViewEl = document.getElementById("list-view");
 const detailViewEl = document.getElementById("detail-view");
 
 function save() {
-  localStorage.setItem(storageKey, JSON.stringify({ statuses: state.statuses, checks: state.checks }));
+  localStorage.setItem(storageKey, JSON.stringify({ checks: state.checks }));
 }
 
 function flattenIndicators() {
@@ -155,8 +154,33 @@ function flattenIndicators() {
   );
 }
 
+function findIndicatorById(indicatorId) {
+  for (const domain of domains) {
+    for (const standard of domain.standards) {
+      const indicator = standard.indicators.find((item) => item.id === indicatorId);
+      if (indicator) return indicator;
+    }
+  }
+  return null;
+}
+
+function completionRate(indicator) {
+  const totalItems = indicator.evidenceGuide.length + indicator.documentsGuide.length;
+  if (totalItems === 0) return 0;
+  return Math.round((providedCount(indicator.id) / totalItems) * 100);
+}
+
+function statusFromCompletion(rate) {
+  if (rate === 0) return "لم يبدأ";
+  if (rate < 90) return "قيد التنفيذ";
+  if (rate < 100) return "مكتملة";
+  return "منجز";
+}
+
 function statusBadge(id) {
-  return state.statuses[id] || "لم يبدأ";
+  const indicator = findIndicatorById(id);
+  if (!indicator) return "لم يبدأ";
+  return statusFromCompletion(completionRate(indicator));
 }
 
 function calcLevel(count) {
@@ -178,15 +202,17 @@ function providedCount(indicatorId) {
 function renderDashboard() {
   const all = flattenIndicators();
   const total = all.length;
-  const completed = all.filter((i) => statusBadge(i.id) === "مكتمل").length;
+  const done = all.filter((i) => statusBadge(i.id) === "منجز").length;
+  const almostDone = all.filter((i) => statusBadge(i.id) === "مكتملة").length;
   const inProgress = all.filter((i) => statusBadge(i.id) === "قيد التنفيذ").length;
-  const pending = total - completed - inProgress;
-  const progress = Math.round((completed / total) * 100);
+  const pending = all.filter((i) => statusBadge(i.id) === "لم يبدأ").length;
+  const progress = total ? Math.round(all.reduce((sum, indicator) => sum + completionRate(indicator), 0) / total) : 0;
 
   dashboardEl.innerHTML = `
     <div class="stats">
       <div class="stat-box"><h3>${total}</h3><p>إجمالي المؤشرات</p></div>
-      <div class="stat-box"><h3>${completed}</h3><p>مكتمل</p></div>
+      <div class="stat-box"><h3>${done}</h3><p>منجز</p></div>
+      <div class="stat-box"><h3>${almostDone}</h3><p>مكتملة (90%+)</p></div>
       <div class="stat-box"><h3>${inProgress}</h3><p>قيد التنفيذ</p></div>
       <div class="stat-box"><h3>${pending}</h3><p>لم يبدأ</p></div>
       <div class="gauge">
@@ -272,28 +298,16 @@ function renderIndicators() {
       .map((i) => {
         const score = providedCount(i.id);
         const level = calcLevel(score);
+        const completion = completionRate(i);
         return `<article class="item-card">
           <p class="code">${i.id}</p>
           <h3>${i.title}</h3>
           <div class="row"><span class="status">${statusBadge(i.id)}</span><span class="${level.cls}">${level.text}</span></div>
-          <label>حالة الإنجاز
-            <select data-status="${i.id}">
-              ${["لم يبدأ", "قيد التنفيذ", "مكتمل"].map((s) => `<option ${statusBadge(i.id) === s ? "selected" : ""}>${s}</option>`).join("")}
-            </select>
-          </label>
+          <p>نسبة الإنجاز: <strong>${completion}%</strong></p>
           <button data-indicator="${i.id}">الدليل وقائمة التحقق</button>
         </article>`;
       })
       .join("")}</div>`;
-
-  listViewEl.querySelectorAll("[data-status]").forEach((select) => {
-    select.addEventListener("change", () => {
-      state.statuses[select.dataset.status] = select.value;
-      save();
-      renderDashboard();
-      renderIndicators();
-    });
-  });
 
   listViewEl.querySelectorAll("[data-indicator]").forEach((btn) => {
     btn.addEventListener("click", () => {
