@@ -1,0 +1,259 @@
+:root {
+  --bg: #f2f3f1;
+  --panel: #fdfcf9;
+  --text: #274549;
+  --muted: #6f807f;
+  --primary: #2c7880;
+  --primary-strong: #245f66;
+  --secondary: #8faebe;
+  --border: #d7d9d4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Tajawal", "Cairo", sans-serif;
+  background: radial-gradient(circle at 0 0, #f8f7f3 0%, #ece9df 58%, #e3e2dc 100%);
+  color: var(--text);
+}
+
+h1,
+h2,
+h3,
+button,
+.hero-tag {
+  font-family: "Cairo", "Tajawal", sans-serif;
+}
+
+.report-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 1.6rem 1rem;
+  background: linear-gradient(135deg, #2b5f64 0%, var(--primary) 52%, var(--secondary) 100%);
+  color: #f8fafa;
+  border-bottom: 1px solid #d0d8d8;
+}
+
+.hero-tag {
+  display: inline-block;
+  background: #ffffff2e;
+  border: 1px solid #ffffff4d;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  margin-bottom: 0.4rem;
+}
+
+.report-hero h1 {
+  margin: 0.15rem 0 0.35rem;
+}
+
+.report-hero p {
+  margin: 0;
+  max-width: 940px;
+  line-height: 1.6;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  padding: 0.6rem 1rem;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.btn-outline {
+  border: 1px solid #ffffff8c;
+  color: #fff;
+  background: #ffffff1c;
+}
+
+.report-layout {
+  max-width: 1280px;
+  margin: -1rem auto 2rem;
+  padding: 0 1rem;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1rem;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(44, 120, 128, 0.12);
+  padding: 1rem;
+}
+
+.summary-panel {
+  grid-column: 1 / -1;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.7rem;
+}
+
+.metric {
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, #fdfcf9 0%, #f2f3f1 100%);
+  padding: 0.65rem;
+}
+
+.metric strong {
+  font-size: 1.3rem;
+  color: var(--primary-strong);
+}
+
+.nav-panel {
+  align-self: start;
+  position: sticky;
+  top: 0.8rem;
+}
+
+.domain-btn {
+  border: 1px solid #ced7d8;
+  width: 100%;
+  text-align: right;
+  border-radius: 12px;
+  padding: 0.55rem 0.65rem;
+  margin-bottom: 0.45rem;
+  background: #f4f6f6;
+  cursor: pointer;
+}
+
+.domain-btn.active {
+  background: #dbe7e8;
+  border-color: #9fb9be;
+  color: var(--primary-strong);
+}
+
+.content-panel {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.standards-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.standard-btn {
+  border: 1px solid #c8d2d3;
+  border-radius: 999px;
+  background: #f7f8f6;
+  color: var(--text);
+  padding: 0.4rem 0.85rem;
+  cursor: pointer;
+}
+
+.standard-btn.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.indicators-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 0.8rem;
+}
+
+.indicator {
+  border: 1px solid #d2d9d8;
+  border-radius: 18px;
+  padding: 0.8rem;
+  background: #fcfdfb;
+}
+
+.indicator h3 {
+  margin: 0.2rem 0;
+  font-size: 1.05rem;
+}
+
+.indicator .code {
+  margin: 0;
+  color: var(--primary-strong);
+  direction: ltr;
+}
+
+.badges {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin: 0.5rem 0 0.7rem;
+}
+
+.badge {
+  border-radius: 999px;
+  font-size: 0.82rem;
+  padding: 0.24rem 0.65rem;
+}
+
+.badge-status {
+  background: #dbe7e8;
+  color: #245f66;
+}
+
+.badge-score {
+  background: #ece7d8;
+  color: #6b5f3f;
+}
+
+.indicator button,
+.detail-panel button {
+  border: none;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  padding: 0.45rem 0.75rem;
+  cursor: pointer;
+}
+
+.detail-panel {
+  grid-column: 1 / -1;
+}
+
+.detail-empty {
+  color: var(--muted);
+  margin: 0;
+}
+
+.checklist {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.check-item {
+  border: 1px solid #e0e4df;
+  border-radius: 10px;
+  padding: 0.45rem;
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  background: #fafbf8;
+}
+
+.check-item.active {
+  border-color: #9bb9aa;
+  background: #eef6ef;
+}
+
+@media (max-width: 900px) {
+  .report-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .nav-panel {
+    position: static;
+  }
+}

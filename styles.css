@@ -32,13 +32,43 @@ button {
   font-family: "Cairo", "Tajawal", sans-serif;
 }
 
+
 .hero {
   padding: 2rem 1rem;
   background: linear-gradient(135deg, #2b5f64 0%, var(--primary) 52%, var(--secondary) 100%);
   color: #f9fafa;
   border-bottom: 1px solid #d0d8d8;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
+.hero-actions {
+  display: flex;
+  align-items: center;
+}
+
+.hero-link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid #ffffff8a;
+  padding: 0.55rem 1rem;
+  text-decoration: none;
+  color: #f9fafa;
+  background: #ffffff21;
+  font-family: "Cairo", "Tajawal", sans-serif;
+  font-weight: 700;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.hero-link-btn:hover {
+  background: #ffffff33;
+  transform: translateY(-1px);
+}
 .hero h1 {
   margin: 0.4rem 0;
   font-size: clamp(1.6rem, 2.8vw, 2.3rem);
