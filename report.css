@@ -114,6 +114,7 @@ details {
   display: block;
 }
 
+@media print {
   body {
     background: white;
   }
