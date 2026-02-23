@@ -60,6 +60,7 @@ const state = {
 const statusOptions = ['مكتمل', 'قيد التنفيذ', 'لم يبدأ'];
 const availOptions = ['متوفرة بالكامل', 'متوفرة جزئياً', 'غير متوفرة'];
 const selfEvalOptions = ['4', '3', '2', '1'];
+const ownerOptions = ['فريق التميز', 'مدير المدرسة', 'المرشد الطلابي', 'رائد النشاط', 'معلمين المواد'];
 
 const domainFilter = document.getElementById('domainFilter');
 const standardFilter = document.getElementById('standardFilter');
@@ -191,7 +192,9 @@ function renderRows() {
             </select>
           </td>
           <td>
-            <input class="row-input" data-code="${item.code}" data-key="owner" value="${esc(current.owner)}" placeholder="اسم المسؤول" />
+            <select class="row-select" data-code="${item.code}" data-key="owner">
+              ${optionList(ownerOptions, current.owner)}
+            </select>
           </td>
           <td>
             <textarea class="row-textarea" data-code="${item.code}" data-key="notes" placeholder="الإجراء التصحيحي">${esc(current.notes)}</textarea>
@@ -201,7 +204,7 @@ function renderRows() {
     })
     .join('');
 
-  rowsEl.querySelectorAll('select.row-select, input.row-input, textarea.row-textarea').forEach((el) => {
+  rowsEl.querySelectorAll('select.row-select, textarea.row-textarea').forEach((el) => {
     const handler = () => setRowValue(el.dataset.code, el.dataset.key, el.value);
     el.addEventListener('change', handler);
     if (el.tagName !== 'SELECT') el.addEventListener('input', handler);
