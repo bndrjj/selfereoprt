@@ -152,6 +152,11 @@ button {
   gap: 0.8rem;
 }
 
+.indicators-grid {
+  grid-template-columns: repeat(auto-fit, minmax(390px, 1fr));
+  gap: 1rem;
+}
+
 .item-card {
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -159,8 +164,180 @@ button {
   background: #fdfcf9;
 }
 
+.indicators-grid .item-card {
+  border-radius: 26px;
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+}
+
 .item-card h3 {
   margin: 0.2rem 0 0.5rem;
+}
+
+.indicator-card-head,
+.indicator-card-foot {
+  border: 1.5px solid #cbceca;
+  border-radius: 26px;
+  background: #f4f4f3;
+}
+
+.indicator-card-head {
+  min-height: 250px;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1rem 1.2rem 1.9rem;
+}
+
+.indicator-card-foot {
+  padding: 1.1rem 1.4rem 1.2rem;
+}
+
+.indicator-code {
+  margin: 0;
+  font-family: "Tajawal", sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.5px;
+  direction: ltr;
+  unicode-bidi: isolate;
+  color: #24484d;
+}
+
+.indicator-heading {
+  margin: 1.35rem 0 0;
+  font-family: "Tajawal", sans-serif;
+  font-size: 18px;
+  line-height: 1.55;
+  font-weight: 300;
+  color: #24484d;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.indicator-card-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.indicator-progress-row {
+  display: grid;
+  grid-template-columns: 1fr 1.55fr 1fr;
+  gap: 0.7rem;
+}
+
+.indicator-chip {
+  min-height: 46px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Tajawal", sans-serif;
+  font-size: 16px;
+  line-height: 1.25;
+  font-weight: 300;
+}
+
+.indicator-chip-status {
+  background: #cfdee2;
+  color: #24484d;
+}
+
+.indicator-chip-value {
+  background: #cfdee2;
+  color: #24484d;
+  font-weight: 700;
+}
+
+.indicator-chip-label {
+  background: #ddd6c8;
+  color: #24484d;
+  font-weight: 300;
+}
+
+.indicator-level {
+  min-height: 48px;
+  border-radius: 18px;
+  background: #ddd6c8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  font-family: "Tajawal", sans-serif;
+  font-size: 16px;
+  line-height: 1.35;
+  font-weight: 300;
+}
+
+.indicator-level-text {
+  max-width: calc(100% - 56px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.indicator-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-low,
+.indicator-level-low {
+  color: #d54e54;
+}
+
+.dot-med,
+.indicator-level-med {
+  color: #58a16c;
+}
+
+.dot-high,
+.indicator-level-high {
+  color: #58a16c;
+}
+
+.dot-vhigh,
+.indicator-level-vhigh {
+  color: #5a8dad;
+}
+
+.dot-low {
+  background: #d54e54;
+}
+
+.dot-med,
+.dot-high {
+  background: #58a16c;
+}
+
+.dot-vhigh {
+  background: #4f89ad;
+}
+
+.indicator-action {
+  border: none;
+  width: 100%;
+  min-height: 48px;
+  border-radius: 18px;
+  background: #2f7f87;
+  color: #f1f6f7;
+  font-family: "Tajawal", sans-serif;
+  font-size: 16px;
+  line-height: 1.3;
+  font-weight: 300;
+  cursor: pointer;
+}
+
+.indicator-action:hover {
+  background: #266b72;
 }
 
 .item-card .code {
@@ -311,5 +488,17 @@ pre {
 @media (max-width: 700px) {
   .gauge {
     grid-column: span 1;
+  }
+
+  .indicators-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .indicator-card-head {
+    min-height: 200px;
+  }
+
+  .indicator-progress-row {
+    grid-template-columns: 1fr;
   }
 }
