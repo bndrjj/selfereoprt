@@ -201,7 +201,7 @@ function renderBackupPanel() {
     <h2>حفظ ومشاركة التقدم</h2>
     <p class="backup-note">احفظ نسخة احتياطية كاملة من جميع المؤشرات ثم استعدها لاحقًا على أي جهاز أو مع أي عضو في الفريق.</p>
     <div class="backup-actions">
-      <button class="backup-btn" data-backup="download">تنزيل نسخة احتياطية (JSON)</button>
+      <button class="backup-btn" data-backup="download">نسخة احتياطية</button>
       <label class="backup-btn backup-btn-outline" for="backup-file-input">استعادة نسخة من ملف</label>
       <input id="backup-file-input" type="file" accept="application/json" hidden />
     </div>
