@@ -66,9 +66,7 @@ const state = {
   rows: persisted.rows || {}
 };
 
-const statusOptions = ['مكتمل', 'قيد التنفيذ', 'لم يبدأ'];
 const availOptions = ['متوفرة بالكامل', 'متوفرة جزئياً', 'غير متوفرة'];
-const selfEvalOptions = ['4', '3', '2', '1'];
 const ownerOptions = ['فريق التميز', 'مدير المدرسة', 'المرشد الطلابي', 'رائد النشاط', 'معلمين المواد'];
 
 const domainFilter = document.getElementById('domainFilter');
@@ -110,18 +108,43 @@ function editHeaderValue(key, label) {
   renderHeaderMeta();
 }
 
+function toNumberInRange(value, min = 0, max = 100) {
+  const parsed = Number(value);
+  if (Number.isNaN(parsed)) return min;
+  return Math.max(min, Math.min(max, parsed));
+}
+
+function deriveStatusFromProgress(progress) {
+  if (progress >= 100) return 'مكتمل';
+  if (progress > 0) return 'قيد التنفيذ';
+  return 'لم يبدأ';
+}
+
+function deriveSelfEvalFromProgress(progress) {
+  if (progress >= 90) return '4';
+  if (progress >= 75) return '3';
+  if (progress >= 50) return '2';
+  return '1';
+}
+
 function rowState(code) {
-  return state.rows[code] || {
-    status: 'لم يبدأ',
-    availability: 'غير متوفرة',
-    selfEval: '1',
-    owner: '',
-    notes: ''
+  const raw = state.rows[code] || {};
+  const progress = toNumberInRange(raw.progress ?? 0, 0, 100);
+
+  return {
+    progress,
+    status: deriveStatusFromProgress(progress),
+    availability: raw.availability || 'غير متوفرة',
+    selfEval: deriveSelfEvalFromProgress(progress),
+    owner: raw.owner || '',
+    notes: raw.notes || ''
   };
 }
 
 function setRowValue(code, key, value) {
-  state.rows[code] = { ...rowState(code), [key]: value };
+  const currentRaw = state.rows[code] || {};
+  const nextValue = key === 'progress' ? toNumberInRange(value, 0, 100) : value;
+  state.rows[code] = { ...currentRaw, [key]: nextValue };
   save();
   renderSummary();
 }
@@ -253,6 +276,9 @@ function buildProcedureReflection(items) {
 function renderSummary() {
   const items = getFilteredIndicators();
   const stats = getStatusStats(items);
+  const avgProgress = items.length
+    ? Math.round(items.reduce((sum, item) => sum + rowState(item.code).progress, 0) / items.length)
+    : 0;
   summaryEl.innerHTML = `
     <span>المجال المختار: ${esc(state.filterDomain)}</span>
     <span>المعيار المختار: ${esc(state.filterStandard)}</span>
@@ -261,7 +287,8 @@ function renderSummary() {
     <span>قيد التنفيذ (تنفيذ جزئي): ${stats.inProgress}</span>
     <span>لم يبدأ: ${stats.pending}</span>
     <span>المتبقي: ${stats.remaining}</span>
-    <span>نسبة الإنجاز: ${stats.completionRate}%</span>
+    <span>نسبة الإنجاز (مكتمل): ${stats.completionRate}%</span>
+    <span>متوسط نسبة الإنجاز: ${avgProgress}%</span>
   `;
 }
 
@@ -273,7 +300,7 @@ function renderRows() {
     .map((item) => {
       const current = rowState(item.code);
       const groupRow = item.standard !== lastStandard
-        ? `<tr class="standard-row"><td colspan="10">المعيار: ${esc(item.standard)}</td></tr>`
+        ? `<tr class="standard-row"><td colspan="11">المعيار: ${esc(item.standard)}</td></tr>`
         : '';
       lastStandard = item.standard;
 
@@ -285,20 +312,15 @@ function renderRows() {
           <td class="evidence-cell"><details><summary>عرض الشواهد</summary>${esc(item.evidence)}</details></td>
           <td class="docs-cell"><details><summary>عرض الوثائق</summary>${esc(item.docs)}</details></td>
           <td>
-            <select class="row-select" data-code="${item.code}" data-key="status">
-              ${optionList(statusOptions, current.status)}
-            </select>
+            <input class="row-input" type="number" min="0" max="100" step="1" data-code="${item.code}" data-key="progress" value="${current.progress}" />
           </td>
+          <td class="center-cell"><strong>${esc(current.status)}</strong></td>
           <td>
             <select class="row-select" data-code="${item.code}" data-key="availability">
               ${optionList(availOptions, current.availability)}
             </select>
           </td>
-          <td>
-            <select class="row-select" data-code="${item.code}" data-key="selfEval">
-              ${optionList(selfEvalOptions, current.selfEval)}
-            </select>
-          </td>
+          <td class="center-cell"><strong>${esc(current.selfEval)}</strong></td>
           <td>
             <select class="row-select" data-code="${item.code}" data-key="owner">
               ${optionList(ownerOptions, current.owner)}
@@ -312,7 +334,7 @@ function renderRows() {
     })
     .join('');
 
-  rowsEl.querySelectorAll('select.row-select, textarea.row-textarea').forEach((el) => {
+  rowsEl.querySelectorAll('select.row-select, textarea.row-textarea, input.row-input').forEach((el) => {
     const handler = () => setRowValue(el.dataset.code, el.dataset.key, el.value);
     el.addEventListener('change', handler);
     if (el.tagName !== 'SELECT') el.addEventListener('input', handler);
@@ -365,7 +387,7 @@ document.getElementById('clearBtn').addEventListener('click', () => {
 //  هذا هو الجزء المسؤول عن توليد التقرير الاحترافي الجديد
 // =========================================================
 document.getElementById('exportBtn').addEventListener('click', () => {
-  const items = getFilteredIndicators();
+  const items = indicators.slice();
   const stats = getStatusStats(items);
   const executionTable = buildExecutionTable(items);
   const notCompleted = getNotCompletedIndicators(items);
@@ -387,7 +409,7 @@ document.getElementById('exportBtn').addEventListener('click', () => {
     const standardRow = item.standard !== lastStandard
       ? `
         <tr class="row-standard">
-          <td colspan="7">المعيار: ${esc(item.standard)}</td>
+          <td colspan="8">المعيار: ${esc(item.standard)}</td>
         </tr>
       `
       : '';
@@ -403,6 +425,7 @@ document.getElementById('exportBtn').addEventListener('click', () => {
         </td>
         <td class="small-text">${esc(item.evidence)}</td>
         <td class="small-text">${esc(item.docs)}</td>
+        <td class="center-text">${current.progress}%</td>
         <td class="center-text">${esc(current.status)}</td>
         <td class="center-text">${esc(current.availability)}</td>
         <td class="center-text">${esc(current.selfEval)}</td>
@@ -534,7 +557,7 @@ document.getElementById('exportBtn').addEventListener('click', () => {
 
         .summary-bar {
           display: grid;
-          grid-template-columns: repeat(10, 1fr);
+          grid-template-columns: repeat(6, minmax(0, 1fr));
           border: 1px solid var(--line);
           border-radius: 14px;
           overflow: hidden;
@@ -606,10 +629,10 @@ document.getElementById('exportBtn').addEventListener('click', () => {
           padding: 8px 10px;
         }
 
-        .col-indicator { width: 24%; }
-        .col-evidence { width: 22%; }
-        .col-docs { width: 18%; }
-        .col-status { width: 10%; }
+        .col-indicator { width: 22%; }
+        .col-evidence { width: 20%; }
+        .col-docs { width: 16%; }
+        .col-status { width: 8%; }
         .col-avail { width: 10%; }
         .col-eval { width: 6%; }
         .col-notes { width: 10%; }
@@ -697,12 +720,12 @@ document.getElementById('exportBtn').addEventListener('click', () => {
             <span class="summary-value text">${esc(state.schoolName)}</span>
           </div>
           <div class="summary-item">
-            <span class="summary-label">المجال</span>
-            <span class="summary-value text">${esc(state.filterDomain)}</span>
+            <span class="summary-label">نطاق التقرير</span>
+            <span class="summary-value text">جميع المجالات</span>
           </div>
           <div class="summary-item">
-            <span class="summary-label">المعيار المختار</span>
-            <span class="summary-value text">${esc(state.filterStandard)}</span>
+            <span class="summary-label">المعايير</span>
+            <span class="summary-value text">جميع المعايير</span>
           </div>
           <div class="summary-item">
             <span class="summary-label">إجمالي المؤشرات</span>
@@ -728,9 +751,17 @@ document.getElementById('exportBtn').addEventListener('click', () => {
             <span class="summary-label">أدلة متوفرة جزئياً</span>
             <span class="summary-value">${availabilityStats.partial}</span>
           </div>
+          <div class="summary-item">
+            <span class="summary-label">أدلة غير متوفرة</span>
+            <span class="summary-value">${availabilityStats.missing}</span>
+          </div>
           <div class="summary-item highlight">
-            <span class="summary-label">نسبة الإنجاز</span>
+            <span class="summary-label">نسبة الإنجاز (مكتمل)</span>
             <span class="summary-value">${stats.completionRate}%</span>
+          </div>
+          <div class="summary-item highlight">
+            <span class="summary-label">متوسط نسبة الإنجاز</span>
+            <span class="summary-value">${Math.round(items.reduce((sum, item) => sum + rowState(item.code).progress, 0) / (items.length || 1))}%</span>
           </div>
         </section>
 
@@ -789,9 +820,10 @@ document.getElementById('exportBtn').addEventListener('click', () => {
                 <th class="col-indicator">المؤشر</th>
                 <th class="col-evidence">الشواهد المتوقعة</th>
                 <th class="col-docs">الوثائق</th>
+                <th class="col-status">نسبة الإنجاز</th>
                 <th class="col-status">حالة الإنجاز</th>
                 <th class="col-avail">توفر الأدلة</th>
-                <th class="col-eval">التقييم</th>
+                <th class="col-eval">التقييم الذاتي</th>
                 <th class="col-notes">ملاحظات</th>
               </tr>
             </thead>
