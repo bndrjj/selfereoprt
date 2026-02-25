@@ -161,10 +161,17 @@ details {
     padding: 0.15rem 0;
   }
 
+  .header-main {
+    text-align: right;
+  }
+
   .header-main .line,
-  .left-col .line,
   .line-editable {
-    justify-content: center;
+    justify-content: flex-end;
+    text-align: right;
+  }
+
+  .left-col .line {
     text-align: center;
   }
 
