@@ -11,19 +11,22 @@ body { margin: 0; background: #ecefef; color: #1f4e4a; font-family: "Tajawal", s
 
 .header {
   display: grid;
-  direction: ltr;
-  grid-template-columns: 220px 340px minmax(420px, 1fr);
-  grid-template-areas: "side logo text";
+  direction: rtl;
+  grid-template-columns: minmax(230px, 1fr) minmax(260px, 340px) minmax(360px, 1fr);
+  grid-template-areas: "main logo side";
   align-items: center;
   border-bottom: 2px solid #2b8a84;
-  padding-bottom: 0.8rem;
+  padding: 0.35rem 0.25rem 0.9rem;
   margin-bottom: 0.7rem;
-  gap: 0.85rem;
+  gap: 1rem;
 }
 
 .left-col {
   grid-area: side;
   direction: rtl;
+  justify-self: start;
+  min-height: 100%;
+  padding: 0.4rem 0.15rem;
 }
 
 .logo-wrap {
@@ -31,16 +34,19 @@ body { margin: 0; background: #ecefef; color: #1f4e4a; font-family: "Tajawal", s
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 150px;
+  min-height: 160px;
+  margin-inline: auto;
 }
 
 .header-main {
-  grid-area: text;
+  grid-area: main;
   direction: rtl;
   text-align: right;
+  justify-self: end;
+  padding: 0.4rem 0.15rem;
 }
 
-.line { margin: 0 0 0.32rem; font-weight: 800; font-size: 1.05rem; color: #0d5a55; }
+.line { margin: 0 0 0.34rem; font-weight: 800; font-size: 1.05rem; color: #0d5a55; }
 .moe-logo { width: min(300px, 100%); max-height: 160px; height: auto; object-fit: contain; display: block; }
 .header-main .line { font-size: 0.95rem; line-height: 1.45; }
 .header-main .line:first-child,
@@ -50,6 +56,29 @@ body { margin: 0; background: #ecefef; color: #1f4e4a; font-family: "Tajawal", s
 .left-col .line { text-align: left; font-size: 0.9rem; color: #2e6662; }
 .header-actions { display: flex; justify-content: flex-start; }
 .round-btn { width: 30px; height: 30px; border-radius: 999px; border: 1px solid var(--line); background: #eaf3f1; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; color: var(--ink-soft); }
+
+.header-main,
+.left-col {
+  position: relative;
+}
+
+.header-main::after,
+.left-col::before {
+  content: "";
+  position: absolute;
+  top: 0.3rem;
+  bottom: 0.3rem;
+  width: 1px;
+  background: linear-gradient(180deg, transparent 0%, #b8d2ce 18%, #b8d2ce 82%, transparent 100%);
+}
+
+.header-main::after {
+  left: -0.55rem;
+}
+
+.left-col::before {
+  right: -0.55rem;
+}
 
 .toolbar { display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; margin-bottom: 0.6rem; }
 .sel { position: relative; }
@@ -112,6 +141,41 @@ textarea.row-textarea { min-height: 62px; resize: vertical; }
 
 details {
   display: block;
+}
+
+@media (max-width: 980px) {
+  .header {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "main"
+      "logo"
+      "side";
+    text-align: center;
+    gap: 0.55rem;
+  }
+
+  .header-main,
+  .left-col {
+    justify-self: stretch;
+    text-align: center;
+    padding: 0.15rem 0;
+  }
+
+  .header-main .line,
+  .left-col .line,
+  .line-editable {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .header-main::after,
+  .left-col::before {
+    display: none;
+  }
+
+  .header-actions {
+    justify-content: center;
+  }
 }
 
 @media print {
