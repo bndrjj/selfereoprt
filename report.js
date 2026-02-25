@@ -151,17 +151,66 @@ function getFilteredIndicators() {
   });
 }
 
-function renderSummary() {
-  const items = getFilteredIndicators();
+function getStatusStats(items) {
   const completed = items.filter((i) => rowState(i.code).status === 'مكتمل').length;
   const inProgress = items.filter((i) => rowState(i.code).status === 'قيد التنفيذ').length;
   const pending = items.filter((i) => rowState(i.code).status === 'لم يبدأ').length;
+  const remaining = inProgress + pending;
+  const completionRate = items.length ? Math.round((completed / items.length) * 100) : 0;
+
+  return { completed, inProgress, pending, remaining, completionRate };
+}
+
+function buildExecutionTable(items) {
+  const grouped = new Map();
+
+  items.forEach((item) => {
+    const key = `${item.domain}__${item.standard}`;
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        domain: item.domain,
+        standard: item.standard,
+        total: 0,
+        completed: 0,
+        inProgress: 0,
+        pending: 0
+      });
+    }
+
+    const bucket = grouped.get(key);
+    bucket.total += 1;
+
+    const status = rowState(item.code).status;
+    if (status === 'مكتمل') bucket.completed += 1;
+    if (status === 'قيد التنفيذ') bucket.inProgress += 1;
+    if (status === 'لم يبدأ') bucket.pending += 1;
+  });
+
+  return [...grouped.values()].map((bucket) => ({
+    ...bucket,
+    remaining: bucket.inProgress + bucket.pending,
+    completionRate: bucket.total ? Math.round((bucket.completed / bucket.total) * 100) : 0
+  }));
+}
+
+function getNotCompletedIndicators(items) {
+  return items
+    .map((item) => ({ ...item, status: rowState(item.code).status }))
+    .filter((item) => item.status !== 'مكتمل');
+}
+
+function renderSummary() {
+  const items = getFilteredIndicators();
+  const stats = getStatusStats(items);
   summaryEl.innerHTML = `
     <span>المجال المختار: ${esc(state.filterDomain)}</span>
+    <span>المعيار المختار: ${esc(state.filterStandard)}</span>
     <span>عدد المؤشرات المعروضة: ${items.length}</span>
-    <span>مكتمل: ${completed}</span>
-    <span>قيد التنفيذ: ${inProgress}</span>
-    <span>لم يبدأ: ${pending}</span>
+    <span>مكتمل: ${stats.completed}</span>
+    <span>قيد التنفيذ (تنفيذ جزئي): ${stats.inProgress}</span>
+    <span>لم يبدأ: ${stats.pending}</span>
+    <span>المتبقي: ${stats.remaining}</span>
+    <span>نسبة الإنجاز: ${stats.completionRate}%</span>
   `;
 }
 
@@ -266,8 +315,9 @@ document.getElementById('clearBtn').addEventListener('click', () => {
 // =========================================================
 document.getElementById('exportBtn').addEventListener('click', () => {
   const items = getFilteredIndicators();
-  const completed = items.filter((i) => rowState(i.code).status === 'مكتمل').length;
-  const completionRate = items.length ? Math.round((completed / items.length) * 100) : 0;
+  const stats = getStatusStats(items);
+  const executionTable = buildExecutionTable(items);
+  const notCompleted = getNotCompletedIndicators(items);
   const exportDate = todayAr();
   const exportDateTime = new Date().toLocaleString('en-US', {
     year: '2-digit',
@@ -307,6 +357,33 @@ document.getElementById('exportBtn').addEventListener('click', () => {
       </tr>
     `;
   }).join('');
+
+  const executionTableHtml = executionTable.length
+    ? executionTable.map((row) => `
+        <tr>
+          <td>${esc(row.domain)}</td>
+          <td>${esc(row.standard)}</td>
+          <td class="center-text">${row.total}</td>
+          <td class="center-text">${row.completed}</td>
+          <td class="center-text">${row.inProgress}</td>
+          <td class="center-text">${row.pending}</td>
+          <td class="center-text">${row.remaining}</td>
+          <td class="center-text">${row.completionRate}%</td>
+        </tr>
+      `).join('')
+    : '<tr><td colspan="8" class="center-text">لا توجد بيانات مطابقة للمرشحات الحالية.</td></tr>';
+
+  const notCompletedHtml = notCompleted.length
+    ? notCompleted.map((item) => `
+        <tr>
+          <td class="center-text">${esc(item.code)}</td>
+          <td>${esc(item.text)}</td>
+          <td>${esc(item.domain)}</td>
+          <td>${esc(item.standard)}</td>
+          <td class="center-text">${esc(item.status)}</td>
+        </tr>
+      `).join('')
+    : '<tr><td colspan="5" class="center-text">جميع المؤشرات مكتملة.</td></tr>';
 
   const popup = window.open('', '_blank', 'width=1280,height=900');
   if (!popup) return;
@@ -390,7 +467,7 @@ document.getElementById('exportBtn').addEventListener('click', () => {
 
         .summary-bar {
           display: grid;
-          grid-template-columns: repeat(5, 1fr);
+          grid-template-columns: repeat(8, 1fr);
           border: 1px solid var(--line);
           border-radius: 14px;
           overflow: hidden;
@@ -419,7 +496,17 @@ document.getElementById('exportBtn').addEventListener('click', () => {
           font-weight: 800;
         }
         .summary-value.text {
-          font-size: 30px;
+          font-size: 19px;
+        }
+
+        .section-title {
+          margin: 18px 0 8px;
+          padding: 8px 10px;
+          border-right: 4px solid var(--teal-700);
+          background: #f2f8f7;
+          color: var(--teal-900);
+          font-size: 15px;
+          font-weight: 800;
         }
 
         table {
@@ -439,7 +526,7 @@ document.getElementById('exportBtn').addEventListener('click', () => {
         }
         td {
           border: 1px solid #d5e5e2;
-          font-size: 15px;
+          font-size: 14px;
           line-height: 1.4;
           padding: 8px 8px;
           vertical-align: top;
@@ -532,16 +619,12 @@ document.getElementById('exportBtn').addEventListener('click', () => {
 
           <div class="header-col left">
             <p>نموذج المتابعة المستمرة</p>
-            <p>تقرير الاعتماد المدرسي</p>
+            <p>تقرير قوائم التحقق للمؤشرات</p>
             <p class="sub">تاريخ الإصدار ${esc(exportDate)}</p>
           </div>
         </header>
 
         <section class="summary-bar">
-          <div class="summary-item">
-            <span class="summary-label">اسم المدرسة</span>
-            <span class="summary-value text">${esc(state.schoolName)}</span>
-          </div>
           <div class="summary-item">
             <span class="summary-label">المجال</span>
             <span class="summary-value text">${esc(state.filterDomain)}</span>
@@ -551,15 +634,63 @@ document.getElementById('exportBtn').addEventListener('click', () => {
             <span class="summary-value text">${esc(state.filterStandard)}</span>
           </div>
           <div class="summary-item">
-            <span class="summary-label">عدد المؤشرات</span>
+            <span class="summary-label">إجمالي المؤشرات</span>
             <span class="summary-value">${items.length}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">مكتمل بالكامل</span>
+            <span class="summary-value">${stats.completed}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">تنفيذ جزئي</span>
+            <span class="summary-value">${stats.inProgress}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">لم يبدأ</span>
+            <span class="summary-value">${stats.pending}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">المتبقي</span>
+            <span class="summary-value">${stats.remaining}</span>
           </div>
           <div class="summary-item highlight">
             <span class="summary-label">نسبة الإنجاز</span>
-            <span class="summary-value">${completionRate}%</span>
+            <span class="summary-value">${stats.completionRate}%</span>
           </div>
         </section>
 
+        <h3 class="section-title">أولاً: جدول تتبع تنفيذ المؤشرات حسب المجال والمعيار</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>المجال</th>
+              <th>المعيار</th>
+              <th>إجمالي المؤشرات</th>
+              <th>مكتمل</th>
+              <th>تنفيذ جزئي</th>
+              <th>لم يبدأ</th>
+              <th>المتبقي</th>
+              <th>نسبة الإنجاز</th>
+            </tr>
+          </thead>
+          <tbody>${executionTableHtml}</tbody>
+        </table>
+
+        <h3 class="section-title">ثانياً: المؤشرات غير المكتملة (أرقام وأسماء)</h3>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:12%">رقم المؤشر</th>
+              <th style="width:38%">اسم المؤشر</th>
+              <th style="width:18%">المجال</th>
+              <th style="width:18%">المعيار</th>
+              <th style="width:14%">الحالة الحالية</th>
+            </tr>
+          </thead>
+          <tbody>${notCompletedHtml}</tbody>
+        </table>
+
+        <h3 class="section-title">ثالثاً: التفاصيل التشغيلية الكاملة للمؤشرات</h3>
         ${items.length ? `
           <table>
             <thead>
