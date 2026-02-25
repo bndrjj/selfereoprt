@@ -121,7 +121,7 @@ tbody tr:nth-child(even) td { background: #f8fbfa; }
 #rows { display: table-row-group; }
 #rows tr { display: table-row; }
 
-select.row-select, textarea.row-textarea {
+select.row-select, textarea.row-textarea, input.row-input {
   width: 100%;
   margin-top: 0.35rem;
   border: 1px solid #b6ceca;
@@ -131,6 +131,8 @@ select.row-select, textarea.row-textarea {
   padding: 0.35rem 0.45rem;
 }
 textarea.row-textarea { min-height: 62px; resize: vertical; }
+input.row-input { text-align: center; font-weight: 700; }
+.center-cell { text-align: center; vertical-align: middle; }
 
 .standard-row td {
   background: #dcecea;
