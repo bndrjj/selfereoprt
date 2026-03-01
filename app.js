@@ -1437,7 +1437,7 @@ function findIndicatorById(indicatorId) {
 function completionRate(indicator) {
   const totalItems = indicator.evidenceGuide.length + indicator.documentsGuide.length;
   if (totalItems === 0) return 0;
-  return Math.round((providedCount(indicator.id) / totalItems) * 100);
+  return Math.min(100, Math.round((providedCount(indicator.id) / totalItems) * 100));
 }
 
 function statusFromCompletion(rate) {
@@ -1486,8 +1486,23 @@ function getChecks(indicatorId) {
   return state.checks[indicatorId] || { evidence: [], documents: [] };
 }
 
+function getValidChecks(indicatorId) {
+  const indicator = findIndicatorById(indicatorId);
+  const checks = getChecks(indicatorId);
+  if (!indicator) return { evidence: [], documents: [] };
+
+  const validEvidence = (checks.evidence || []).filter(
+    (idx) => Number.isInteger(idx) && idx >= 0 && idx < indicator.evidenceGuide.length
+  );
+  const validDocuments = (checks.documents || []).filter(
+    (idx) => Number.isInteger(idx) && idx >= 0 && idx < indicator.documentsGuide.length
+  );
+
+  return { evidence: validEvidence, documents: validDocuments };
+}
+
 function providedCount(indicatorId) {
-  const c = getChecks(indicatorId);
+  const c = getValidChecks(indicatorId);
   return (c.evidence?.length || 0) + (c.documents?.length || 0);
 }
 
@@ -1705,7 +1720,7 @@ function renderDetail() {
     return;
   }
   const i = state.selectedIndicator;
-  const checks = getChecks(i.id);
+  const checks = getValidChecks(i.id);
   const score = providedCount(i.id);
   const level = calcLevel(score);
   const progress = completionRate(i);
