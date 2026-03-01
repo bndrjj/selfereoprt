@@ -1387,6 +1387,7 @@ function renderBackupPanel() {
     <div class="backup-actions">
       <button class="backup-btn" data-backup="download">نسخة احتياطية</button>
       <label class="backup-btn backup-btn-outline" for="backup-file-input">استعادة نسخة من ملف</label>
+      <button class="backup-btn backup-btn-outline" data-backup="report">تقرير الإنجاز (A4 / PDF)</button>
       <input id="backup-file-input" type="file" accept="application/json" hidden />
     </div>
     <p id="backup-status" class="backup-status" aria-live="polite"></p>
@@ -1413,6 +1414,10 @@ function renderBackupPanel() {
     } finally {
       event.target.value = "";
     }
+  });
+
+  backupPanelEl.querySelector('[data-backup="report"]')?.addEventListener("click", () => {
+    openPrintableReport();
   });
 }
 
@@ -1756,6 +1761,171 @@ function renderDetail() {
   });
 }
 
+
+
+function reportIndicatorMeta(indicator, domainName, standardName) {
+  const provided = providedCount(indicator.id);
+  const total = indicator.evidenceGuide.length + indicator.documentsGuide.length;
+  const rate = completionRate(indicator);
+  const status = statusFromCompletion(rate);
+  return { id: indicator.id, title: indicator.title, domainName, standardName, provided, total, rate, status };
+}
+
+function getReportData() {
+  const indicators = domains.flatMap((domain) =>
+    domain.standards.flatMap((standard) =>
+      standard.indicators.map((indicator) => reportIndicatorMeta(indicator, domain.name, standard.name))
+    )
+  );
+
+  const totalIndicators = indicators.length;
+  const done = indicators.filter((item) => item.status === "منجز").length;
+  const almostDone = indicators.filter((item) => item.status === "مكتملة").length;
+  const inProgress = indicators.filter((item) => item.status === "قيد التنفيذ").length;
+  const pending = indicators.filter((item) => item.status === "لم يبدأ").length;
+  const overall = totalIndicators
+    ? Math.round(indicators.reduce((sum, item) => sum + item.rate, 0) / totalIndicators)
+    : 0;
+
+  const byStandard = [];
+  domains.forEach((domain) => {
+    domain.standards.forEach((standard) => {
+      const rows = standard.indicators.map((indicator) => reportIndicatorMeta(indicator, domain.name, standard.name));
+      const avg = rows.length ? Math.round(rows.reduce((sum, item) => sum + item.rate, 0) / rows.length) : 0;
+      byStandard.push({ domainName: domain.name, standardName: standard.name, avg, rows });
+    });
+  });
+
+  return {
+    generatedAt: new Date().toLocaleString("ar-SA"),
+    totalIndicators,
+    done,
+    almostDone,
+    inProgress,
+    pending,
+    overall,
+    byStandard
+  };
+}
+
+function reportBadgeCls(status) {
+  if (status === "منجز") return "r-badge done";
+  if (status === "مكتملة") return "r-badge almost";
+  if (status === "قيد التنفيذ") return "r-badge progress";
+  return "r-badge pending";
+}
+
+function openPrintableReport() {
+  const data = getReportData();
+
+  const standardSections = data.byStandard
+    .map((group) => {
+      const rows = group.rows
+        .map(
+          (row) => `<tr>
+            <td>${row.id}</td>
+            <td>${row.title}</td>
+            <td><span class="${reportBadgeCls(row.status)}">${row.status}</span></td>
+            <td>${row.provided}/${row.total}</td>
+            <td>${row.rate}%</td>
+          </tr>`
+        )
+        .join("");
+
+      return `<section class="r-standard">
+        <h3>${group.domainName} / ${group.standardName}</h3>
+        <p class="r-standard-rate">نسبة إنجاز المعيار: <strong>${group.avg}%</strong></p>
+        <table>
+          <thead>
+            <tr>
+              <th>رقم المؤشر</th>
+              <th>المؤشر</th>
+              <th>الحالة</th>
+              <th>المتحقق</th>
+              <th>نسبة الإنجاز</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </section>`;
+    })
+    .join("");
+
+  const reportHtml = `<!doctype html>
+  <html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <title>تقرير إنجاز المؤشرات</title>
+    <style>
+      @page { size: A4; margin: 12mm; }
+      * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      body { margin: 0; font-family: "Tajawal", Arial, sans-serif; color: #123; background: #fff; }
+      .r-wrap { width: 100%; }
+      .r-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; border: 2px solid #1f8f6a; border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+      .r-logo { width: 120px; height: auto; }
+      .r-klisha h1 { margin: 0; font-size: 22px; color: #0f5f47; }
+      .r-klisha p { margin: 4px 0 0; font-size: 13px; color: #345; }
+      .r-summary { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 14px; }
+      .r-card { border: 1px solid #d8e5df; border-radius: 10px; padding: 8px; text-align: center; background: #f7fbf9; }
+      .r-card strong { display: block; font-size: 20px; color: #0f5f47; }
+      .r-card span { font-size: 12px; color: #445; }
+      .r-progress { margin-bottom: 14px; border: 1px solid #d8e5df; border-radius: 10px; padding: 8px; }
+      .r-bar { background: #e8f2ee; height: 12px; border-radius: 99px; overflow: hidden; }
+      .r-bar > span { display: block; height: 100%; background: linear-gradient(90deg, #1f8f6a, #46b58f); width: ${data.overall}%; }
+      .r-progress p { margin: 0 0 8px; font-size: 13px; }
+      .r-standard { border: 1px solid #e0ebe6; border-radius: 10px; padding: 10px; margin-bottom: 10px; break-inside: avoid; }
+      .r-standard h3 { margin: 0 0 4px; color: #0f5f47; font-size: 16px; }
+      .r-standard-rate { margin: 0 0 8px; font-size: 12px; color: #456; }
+      table { width: 100%; border-collapse: collapse; font-size: 12px; }
+      th, td { border: 1px solid #dde8e2; padding: 6px; vertical-align: top; }
+      th { background: #f0f7f4; }
+      .r-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; }
+      .r-badge.done { background: #d8f2e4; color: #0f7a4f; }
+      .r-badge.almost { background: #dbeeff; color: #1b5c9a; }
+      .r-badge.progress { background: #fff1cf; color: #8a6300; }
+      .r-badge.pending { background: #ffe0e0; color: #a53434; }
+      .r-footer { margin-top: 10px; font-size: 11px; color: #667; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <main class="r-wrap">
+      <header class="r-header">
+        <img class="r-logo" src="وزارة التعليم.png" alt="شعار وزارة التعليم" />
+        <div class="r-klisha">
+          <h1>وزارة التعليم السعودية - تقرير إنجاز المؤشرات</h1>
+          <p>تاريخ إنشاء التقرير: ${data.generatedAt}</p>
+          <p>التقرير مرتبط مباشرة ببيانات الإنجاز المدخلة في المنصة.</p>
+        </div>
+      </header>
+
+      <section class="r-summary">
+        <div class="r-card"><strong>${data.totalIndicators}</strong><span>إجمالي المؤشرات</span></div>
+        <div class="r-card"><strong>${data.done}</strong><span>منجز</span></div>
+        <div class="r-card"><strong>${data.almostDone}</strong><span>مكتملة</span></div>
+        <div class="r-card"><strong>${data.inProgress}</strong><span>قيد التنفيذ</span></div>
+        <div class="r-card"><strong>${data.pending}</strong><span>لم يبدأ</span></div>
+        <div class="r-card"><strong>${data.overall}%</strong><span>الإنجاز الكلي</span></div>
+      </section>
+
+      <section class="r-progress">
+        <p>مؤشر الإنجاز الكلي</p>
+        <div class="r-bar"><span></span></div>
+      </section>
+
+      ${standardSections}
+
+      <footer class="r-footer">يمكن طباعة هذه الصفحة مباشرة على مقاس A4 أو حفظها بصيغة PDF من نافذة الطباعة.</footer>
+    </main>
+    <script>window.addEventListener('load', () => setTimeout(() => window.print(), 500));</script>
+  </body>
+  </html>`;
+
+  const reportWindow = window.open("", "_blank", "noopener,noreferrer");
+  if (!reportWindow) return;
+  reportWindow.document.open();
+  reportWindow.document.write(reportHtml);
+  reportWindow.document.close();
+}
 function render() {
   renderDashboard();
   renderBackupPanel();
