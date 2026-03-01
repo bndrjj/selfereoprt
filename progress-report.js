@@ -664,13 +664,36 @@ document.getElementById("footerDate").textContent = todayGregorian();
   `;
 })();
 
+// ─── اختصار الاسم: الأول والأخير فقط ─────────────────────────────────────────
+function shortName(fullName) {
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length <= 2) return fullName.trim();
+  return parts[0] + " " + parts[parts.length - 1];
+}
+
 // ─── ملء التوقيعات بالأسماء ──────────────────────────────────────────────────
 (function fillSignatures() {
-  if (supervisorName) {
-    document.getElementById("sigSupervisor").textContent = "الاسم: " + supervisorName;
+  // خانة أعضاء فريق التميز (أسماء ثنائية فقط بدون توقيع أو تاريخ)
+  const teamListEl = document.getElementById("sigTeamList");
+  if (teamMembers.length > 0) {
+    teamListEl.innerHTML = teamMembers.map((name, idx) => `
+      <div class="sig-team-member">
+        <span class="sig-team-num">${idx + 1}</span>
+        <span>${esc(shortName(name))}</span>
+      </div>
+    `).join("");
+  } else {
+    teamListEl.innerHTML = '<p style="font-size:12px;color:#5a7370;margin:8px 0">لم يتم إدخال أعضاء الفريق</p>';
   }
+
+  // خانة قائد/ة المدرسة
   if (principalName) {
     document.getElementById("sigPrincipal").textContent = "الاسم: " + principalName;
+  }
+
+  // خانة مشرف/ة التميز المدرسي
+  if (supervisorName) {
+    document.getElementById("sigSupervisor").textContent = "الاسم: " + supervisorName;
   }
 })();
 

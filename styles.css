@@ -48,6 +48,8 @@ button {
 .hero-actions {
   display: flex;
   align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .hero-link-btn {
@@ -794,4 +796,119 @@ select {
 .backup-status {
   margin: 0.8rem 0 0;
   font-weight: 600;
+}
+
+/* ===== نافذة بيانات المدرسة ===== */
+.si-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  justify-content: center;
+  align-items: center;
+}
+.si-overlay.si-active { display: flex; }
+.si-box {
+  background: #fff;
+  border-radius: 18px;
+  width: 92%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  direction: rtl;
+}
+.si-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px 14px;
+  border-bottom: 2px solid #e2edeb;
+  background: linear-gradient(135deg, #f0f7f6, #e8f0ef);
+  border-radius: 18px 18px 0 0;
+}
+.si-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #094d45;
+}
+.si-close {
+  border: none;
+  background: none;
+  font-size: 28px;
+  color: #5a7370;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+}
+.si-close:hover { color: #b91c1c; }
+.si-body { padding: 20px 24px; }
+.si-group { margin-bottom: 16px; }
+.si-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #094d45;
+  margin-bottom: 6px;
+  font-family: "Cairo", "Tajawal", sans-serif;
+}
+.si-hint { font-size: 11px; font-weight: 500; color: #5a7370; }
+.si-input, .si-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #c8dcd9;
+  border-radius: 10px;
+  font-family: "Cairo", "Tajawal", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a2e2c;
+  background: #f7faf9;
+  direction: rtl;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.si-input:focus, .si-textarea:focus {
+  outline: none;
+  border-color: #0c6b60;
+  box-shadow: 0 0 0 3px rgba(12,107,96,0.12);
+}
+.si-textarea { resize: vertical; min-height: 100px; line-height: 1.7; }
+.si-footer {
+  display: flex;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 14px 24px 18px;
+  border-top: 1px solid #e2edeb;
+}
+.si-btn {
+  padding: 10px 28px;
+  border-radius: 10px;
+  font-family: "Cairo", "Tajawal", sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: all 0.2s;
+}
+.si-btn-save {
+  background: linear-gradient(135deg, #094d45, #0c6b60);
+  color: #fff;
+  border-color: #094d45;
+}
+.si-btn-save:hover { background: linear-gradient(135deg, #0c6b60, #1a8f82); }
+.si-btn-cancel {
+  background: #f7faf9;
+  color: #5a7370;
+  border-color: #c8dcd9;
+}
+.si-btn-cancel:hover { background: #e8eeed; }
+.si-status {
+  text-align: center;
+  padding: 0 24px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #15803d;
+  min-height: 20px;
 }

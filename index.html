@@ -23,6 +23,7 @@
         </p>
       </div>
       <div class="hero-actions">
+        <button class="hero-link-btn" id="openSchoolInfoBtn" type="button">&#9881; بيانات المدرسة والفريق</button>
         <a class="hero-link-btn" href="report.html">فتح التقرير المستقل</a>
         <a class="hero-link-btn" href="progress-report.html">تقرير التقدم والإنجاز (PDF)</a>
       </div>
@@ -76,6 +77,108 @@
       </section>
     </main>
 
+    <!-- ===== نافذة بيانات المدرسة والفريق ===== -->
+    <div class="si-overlay" id="siOverlay">
+      <div class="si-box">
+        <div class="si-header">
+          <h3 class="si-title">بيانات المدرسة والفريق</h3>
+          <button class="si-close" id="siCloseBtn" type="button">&times;</button>
+        </div>
+        <div class="si-body">
+          <div class="si-group">
+            <label class="si-label" for="siSchoolName">اسم المدرسة</label>
+            <input class="si-input" id="siSchoolName" type="text" placeholder="مثال: الابتدائية الخامسة" />
+          </div>
+          <div class="si-group">
+            <label class="si-label" for="siRegion">الإدارة التعليمية / المنطقة</label>
+            <input class="si-input" id="siRegion" type="text" placeholder="مثال: الإدارة العامة للتعليم بالمنطقة الشرقية" />
+          </div>
+          <div class="si-group">
+            <label class="si-label" for="siPrincipal">اسم قائد/ة المدرسة</label>
+            <input class="si-input" id="siPrincipal" type="text" placeholder="الاسم الكامل" />
+          </div>
+          <div class="si-group">
+            <label class="si-label" for="siSupervisor">اسم مشرف/ة التميز (منسق الجودة)</label>
+            <input class="si-input" id="siSupervisor" type="text" placeholder="الاسم الكامل" />
+          </div>
+          <div class="si-group">
+            <label class="si-label" for="siTeam">أعضاء فريق التميز <span class="si-hint">(عضو في كل سطر)</span></label>
+            <textarea class="si-textarea" id="siTeam" rows="5" placeholder="أدخل اسم كل عضو في سطر مستقل"></textarea>
+          </div>
+        </div>
+        <div class="si-footer">
+          <button class="si-btn si-btn-cancel" id="siCancelBtn" type="button">إلغاء</button>
+          <button class="si-btn si-btn-save" id="siSaveBtn" type="button">حفظ البيانات</button>
+        </div>
+        <div class="si-status" id="siStatus"></div>
+      </div>
+    </div>
+
     <script src="app.js"></script>
+    <script>
+    // ─── نافذة بيانات المدرسة ─────────────────────────────────
+    (function() {
+      var SKEY = "school-info";
+      var RKEY = "accreditation-checklist-v3";
+      var overlay = document.getElementById("siOverlay");
+      var openBtn = document.getElementById("openSchoolInfoBtn");
+      var closeBtn = document.getElementById("siCloseBtn");
+      var cancelBtn = document.getElementById("siCancelBtn");
+      var saveBtn = document.getElementById("siSaveBtn");
+      var statusEl = document.getElementById("siStatus");
+
+      var inpSchool = document.getElementById("siSchoolName");
+      var inpRegion = document.getElementById("siRegion");
+      var inpPrincipal = document.getElementById("siPrincipal");
+      var inpSupervisor = document.getElementById("siSupervisor");
+      var inpTeam = document.getElementById("siTeam");
+
+      function openModal() {
+        var info = {};
+        try { info = JSON.parse(localStorage.getItem(SKEY) || "{}"); } catch(e) {}
+        inpSchool.value = info.schoolName || "";
+        inpRegion.value = info.regionName || "";
+        inpPrincipal.value = info.principalName || "";
+        inpSupervisor.value = info.supervisorName || "";
+        inpTeam.value = Array.isArray(info.teamMembers) ? info.teamMembers.join("\n") : "";
+        statusEl.textContent = "";
+        overlay.classList.add("si-active");
+        inpSchool.focus();
+      }
+
+      function closeModal() {
+        overlay.classList.remove("si-active");
+      }
+
+      function saveData() {
+        var members = inpTeam.value.split("\n").map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+        var data = {
+          schoolName: inpSchool.value.trim(),
+          regionName: inpRegion.value.trim(),
+          principalName: inpPrincipal.value.trim(),
+          supervisorName: inpSupervisor.value.trim(),
+          teamMembers: members
+        };
+        localStorage.setItem(SKEY, JSON.stringify(data));
+
+        // تحديث بيانات التقرير القديم للتوافق
+        var rStore = {};
+        try { rStore = JSON.parse(localStorage.getItem(RKEY) || "{}"); } catch(e) {}
+        if (data.schoolName) rStore.schoolName = data.schoolName;
+        if (data.regionName) rStore.regionName = data.regionName;
+        localStorage.setItem(RKEY, JSON.stringify(rStore));
+
+        statusEl.textContent = "تم حفظ البيانات بنجاح. ستظهر في تقرير التقدم والإنجاز عند الطباعة.";
+        setTimeout(closeModal, 1500);
+      }
+
+      openBtn.addEventListener("click", openModal);
+      closeBtn.addEventListener("click", closeModal);
+      cancelBtn.addEventListener("click", closeModal);
+      saveBtn.addEventListener("click", saveData);
+      overlay.addEventListener("click", function(e) { if (e.target === overlay) closeModal(); });
+      document.addEventListener("keydown", function(e) { if (e.key === "Escape" && overlay.classList.contains("si-active")) closeModal(); });
+    })();
+    </script>
   </body>
 </html>
