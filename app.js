@@ -1417,7 +1417,12 @@ function renderBackupPanel() {
   });
 
   backupPanelEl.querySelector('[data-backup="report"]')?.addEventListener("click", () => {
-    openPrintableReport();
+    const opened = openPrintableReport();
+    if (opened) {
+      statusEl.textContent = "✅ تم فتح التقرير. استخدم الطباعة للحفظ بصيغة PDF.";
+    } else {
+      statusEl.textContent = "⚠️ تعذر فتح نافذة جديدة؛ تم فتح التقرير في نفس الصفحة.";
+    }
   });
 }
 
@@ -1817,6 +1822,7 @@ function reportBadgeCls(status) {
 
 function openPrintableReport() {
   const data = getReportData();
+  const moeLogoUrl = "https://raw.githubusercontent.com/bndrjj/selfereoprt/main/%D9%88%D8%B2%D8%A7%D8%B1%D8%A9%20%D8%A7%D9%84%D8%AA%D8%B9%D9%84%D9%8A%D9%85.png";
 
   const standardSections = data.byStandard
     .map((group) => {
@@ -1890,7 +1896,7 @@ function openPrintableReport() {
   <body>
     <main class="r-wrap">
       <header class="r-header">
-        <img class="r-logo" src="وزارة التعليم.png" alt="شعار وزارة التعليم" />
+        <img class="r-logo" src="${moeLogoUrl}" alt="شعار وزارة التعليم" />
         <div class="r-klisha">
           <h1>وزارة التعليم السعودية - تقرير إنجاز المؤشرات</h1>
           <p>تاريخ إنشاء التقرير: ${data.generatedAt}</p>
@@ -1920,11 +1926,18 @@ function openPrintableReport() {
   </body>
   </html>`;
 
-  const reportWindow = window.open("", "_blank", "noopener,noreferrer");
-  if (!reportWindow) return;
-  reportWindow.document.open();
-  reportWindow.document.write(reportHtml);
-  reportWindow.document.close();
+  const blob = new Blob([reportHtml], { type: "text/html;charset=utf-8" });
+  const reportUrl = URL.createObjectURL(blob);
+
+  const reportWindow = window.open(reportUrl, "_blank", "noopener,noreferrer");
+  if (reportWindow) {
+    setTimeout(() => URL.revokeObjectURL(reportUrl), 60_000);
+    return true;
+  }
+
+  window.location.href = reportUrl;
+  setTimeout(() => URL.revokeObjectURL(reportUrl), 60_000);
+  return false;
 }
 function render() {
   renderDashboard();
