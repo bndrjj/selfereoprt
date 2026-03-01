@@ -20,6 +20,7 @@
         <a class="tool-btn" href="report.html" title="استمارة التحقق">&#9776; استمارة التحقق</a>
       </div>
       <div class="toolbar-left">
+        <button class="tool-btn settings-btn" id="schoolInfoBtn" type="button">&#9881; بيانات المدرسة</button>
         <button class="tool-btn primary" id="printBtn" type="button">&#128424; طباعة / تصدير PDF</button>
       </div>
     </nav>
@@ -105,17 +106,22 @@
         <div id="recommendations"></div>
       </section>
 
+      <!-- ===== فريق التميز ===== -->
+      <section class="team-section" id="teamSection">
+        <!-- يتم ملؤها بالجافاسكربت -->
+      </section>
+
       <!-- ===== التوقيعات ===== -->
-      <section class="signatures-section">
+      <section class="signatures-section" id="signaturesSection">
         <div class="sig-box">
           <p class="sig-role">إعداد: منسق/ة الجودة والتميز</p>
-          <p class="sig-name">الاسم: .................................</p>
+          <p class="sig-name" id="sigSupervisor">الاسم: .................................</p>
           <p class="sig-sign">التوقيع: .................................</p>
           <p class="sig-date-line">التاريخ: .................................</p>
         </div>
         <div class="sig-box">
-          <p class="sig-role">اعتماد: مدير/ة المدرسة</p>
-          <p class="sig-name">الاسم: .................................</p>
+          <p class="sig-role">اعتماد: قائد/ة المدرسة</p>
+          <p class="sig-name" id="sigPrincipal">الاسم: .................................</p>
           <p class="sig-sign">التوقيع: .................................</p>
           <p class="sig-date-line">التاريخ: .................................</p>
         </div>
@@ -134,6 +140,42 @@
       </footer>
 
     </main>
+
+    <!-- ===== نافذة بيانات المدرسة ===== -->
+    <div class="modal-overlay" id="schoolInfoModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 class="modal-title">بيانات المدرسة والفريق</h3>
+          <button class="modal-close" id="modalCloseBtn" type="button">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="inpSchoolName">اسم المدرسة</label>
+            <input class="form-input" id="inpSchoolName" type="text" placeholder="مثال: الابتدائية الخامسة" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="inpRegion">الإدارة التعليمية / المنطقة</label>
+            <input class="form-input" id="inpRegion" type="text" placeholder="مثال: الإدارة العامة للتعليم بالمنطقة الشرقية" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="inpPrincipal">اسم قائد/ة المدرسة</label>
+            <input class="form-input" id="inpPrincipal" type="text" placeholder="الاسم الكامل" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="inpSupervisor">اسم مشرف/ة التميز (منسق الجودة)</label>
+            <input class="form-input" id="inpSupervisor" type="text" placeholder="الاسم الكامل" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="inpTeamMembers">أعضاء فريق التميز <span class="form-hint">(عضو في كل سطر)</span></label>
+            <textarea class="form-textarea" id="inpTeamMembers" rows="5" placeholder="أدخل اسم كل عضو في سطر مستقل&#10;مثال:&#10;أحمد محمد العلي&#10;فاطمة عبدالله السعيد&#10;نورة خالد الشمري"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-btn cancel" id="modalCancelBtn" type="button">إلغاء</button>
+          <button class="modal-btn save" id="modalSaveBtn" type="button">حفظ البيانات</button>
+        </div>
+      </div>
+    </div>
 
     <script src="progress-report.js"></script>
   </body>

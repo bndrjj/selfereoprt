@@ -143,14 +143,21 @@ const domains = [
 // ─── قراءة البيانات من localStorage ─────────────────────────────────────────
 const APP_KEY = "school-quality-tracker";
 const REPORT_KEY = "accreditation-checklist-v3";
+const SCHOOL_INFO_KEY = "school-info";
 
 const appData = JSON.parse(localStorage.getItem(APP_KEY) || "{}");
 const reportData = JSON.parse(localStorage.getItem(REPORT_KEY) || "{}");
+const schoolInfo = JSON.parse(localStorage.getItem(SCHOOL_INFO_KEY) || "{}");
 
 const appChecks = appData.checks || {};
 const reportRows = reportData.rows || {};
-const regionName = reportData.regionName || "الإدارة العامة للتعليم بالمنطقة الشرقية";
-const schoolName = reportData.schoolName || "اسم المدرسة هنا";
+
+// الأولوية: بيانات نافذة المعلومات > بيانات التقرير > القيم الافتراضية
+const regionName = schoolInfo.regionName || reportData.regionName || "الإدارة العامة للتعليم بالمنطقة الشرقية";
+const schoolName = schoolInfo.schoolName || reportData.schoolName || "اسم المدرسة هنا";
+const principalName = schoolInfo.principalName || "";
+const supervisorName = schoolInfo.supervisorName || "";
+const teamMembers = Array.isArray(schoolInfo.teamMembers) ? schoolInfo.teamMembers : [];
 
 // ─── حساب نسبة الإنجاز لكل مؤشر ────────────────────────────────────────────
 // نأخذ بيانات من المصدر الرئيسي (app.js checks) إن وُجدت، وإلا من report.js rows
@@ -621,6 +628,123 @@ document.getElementById("footerDate").textContent = todayGregorian();
       `).join("")}
     </ul>
   `;
+})();
+
+// ─── قسم فريق التميز ─────────────────────────────────────────────────────────
+(function renderTeamSection() {
+  const container = document.getElementById("teamSection");
+
+  // إذا لم يتم إدخال أي بيانات، لا نعرض القسم
+  if (!principalName && !supervisorName && teamMembers.length === 0) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const membersHtml = teamMembers.length > 0
+    ? `<div class="team-grid">
+        ${teamMembers.map((name, idx) => `
+          <div class="team-item">
+            <span class="team-num">${idx + 1}</span>
+            <span>${esc(name)}</span>
+          </div>
+        `).join("")}
+      </div>`
+    : "";
+
+  container.innerHTML = `
+    <h2 class="section-heading"><span class="sh-icon">&#9670;</span> بيانات المدرسة وفريق التميز</h2>
+    <div class="team-card">
+      <div class="team-info-row">
+        ${schoolName ? `<div class="team-info-item"><span class="team-info-label">المدرسة:</span> ${esc(schoolName)}</div>` : ""}
+        ${principalName ? `<div class="team-info-item"><span class="team-info-label">قائد/ة المدرسة:</span> ${esc(principalName)}</div>` : ""}
+        ${supervisorName ? `<div class="team-info-item"><span class="team-info-label">مشرف/ة التميز:</span> ${esc(supervisorName)}</div>` : ""}
+      </div>
+      ${teamMembers.length > 0 ? `<p class="team-card-title">أعضاء فريق التميز</p>${membersHtml}` : ""}
+    </div>
+  `;
+})();
+
+// ─── ملء التوقيعات بالأسماء ──────────────────────────────────────────────────
+(function fillSignatures() {
+  if (supervisorName) {
+    document.getElementById("sigSupervisor").textContent = "الاسم: " + supervisorName;
+  }
+  if (principalName) {
+    document.getElementById("sigPrincipal").textContent = "الاسم: " + principalName;
+  }
+})();
+
+// ─── نافذة بيانات المدرسة (Modal) ───────────────────────────────────────────
+(function initSchoolInfoModal() {
+  const overlay = document.getElementById("schoolInfoModal");
+  const openBtn = document.getElementById("schoolInfoBtn");
+  const closeBtn = document.getElementById("modalCloseBtn");
+  const cancelBtn = document.getElementById("modalCancelBtn");
+  const saveBtn = document.getElementById("modalSaveBtn");
+
+  const inpSchool = document.getElementById("inpSchoolName");
+  const inpRegion = document.getElementById("inpRegion");
+  const inpPrincipal = document.getElementById("inpPrincipal");
+  const inpSupervisor = document.getElementById("inpSupervisor");
+  const inpTeam = document.getElementById("inpTeamMembers");
+
+  function openModal() {
+    // ملء الحقول بالبيانات الحالية
+    const info = JSON.parse(localStorage.getItem(SCHOOL_INFO_KEY) || "{}");
+    inpSchool.value = info.schoolName || "";
+    inpRegion.value = info.regionName || "";
+    inpPrincipal.value = info.principalName || "";
+    inpSupervisor.value = info.supervisorName || "";
+    inpTeam.value = Array.isArray(info.teamMembers) ? info.teamMembers.join("\n") : "";
+    overlay.classList.add("active");
+    inpSchool.focus();
+  }
+
+  function closeModal() {
+    overlay.classList.remove("active");
+  }
+
+  function saveAndClose() {
+    const members = inpTeam.value
+      .split("\n")
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+
+    const data = {
+      schoolName: inpSchool.value.trim(),
+      regionName: inpRegion.value.trim(),
+      principalName: inpPrincipal.value.trim(),
+      supervisorName: inpSupervisor.value.trim(),
+      teamMembers: members
+    };
+
+    localStorage.setItem(SCHOOL_INFO_KEY, JSON.stringify(data));
+
+    // تحديث بيانات التقرير القديم أيضاً للتوافق
+    const reportStore = JSON.parse(localStorage.getItem(REPORT_KEY) || "{}");
+    if (data.schoolName) reportStore.schoolName = data.schoolName;
+    if (data.regionName) reportStore.regionName = data.regionName;
+    localStorage.setItem(REPORT_KEY, JSON.stringify(reportStore));
+
+    closeModal();
+    // إعادة تحميل الصفحة لتطبيق التغييرات
+    location.reload();
+  }
+
+  openBtn.addEventListener("click", openModal);
+  closeBtn.addEventListener("click", closeModal);
+  cancelBtn.addEventListener("click", closeModal);
+  saveBtn.addEventListener("click", saveAndClose);
+
+  // إغلاق عند النقر خارج النافذة
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) closeModal();
+  });
+
+  // إغلاق بمفتاح Escape
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && overlay.classList.contains("active")) closeModal();
+  });
 })();
 
 // ─── زر الطباعة ──────────────────────────────────────────────────────────────
