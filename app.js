@@ -1417,7 +1417,12 @@ function renderBackupPanel() {
   });
 
   backupPanelEl.querySelector('[data-backup="report"]')?.addEventListener("click", () => {
-    openPrintableReport();
+    const opened = openPrintableReport();
+    if (opened) {
+      statusEl.textContent = "✅ تم فتح التقرير. استخدم الطباعة للحفظ بصيغة PDF.";
+    } else {
+      statusEl.textContent = "⚠️ تعذر فتح نافذة جديدة؛ تم فتح التقرير في نفس الصفحة.";
+    }
   });
 }
 
@@ -1920,11 +1925,18 @@ function openPrintableReport() {
   </body>
   </html>`;
 
-  const reportWindow = window.open("", "_blank", "noopener,noreferrer");
-  if (!reportWindow) return;
-  reportWindow.document.open();
-  reportWindow.document.write(reportHtml);
-  reportWindow.document.close();
+  const blob = new Blob([reportHtml], { type: "text/html;charset=utf-8" });
+  const reportUrl = URL.createObjectURL(blob);
+
+  const reportWindow = window.open(reportUrl, "_blank", "noopener,noreferrer");
+  if (reportWindow) {
+    setTimeout(() => URL.revokeObjectURL(reportUrl), 60_000);
+    return true;
+  }
+
+  window.location.href = reportUrl;
+  setTimeout(() => URL.revokeObjectURL(reportUrl), 60_000);
+  return false;
 }
 function render() {
   renderDashboard();
