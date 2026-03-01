@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>تقرير التقدم والإنجاز | الاعتماد المدرسي</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@300;400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="progress-report.css" />
+  </head>
+  <body>
+    <!-- شريط الأدوات - لا يظهر عند الطباعة -->
+    <nav class="toolbar noprint" id="toolbar">
+      <div class="toolbar-right">
+        <a class="tool-btn home-btn" href="index.html" title="الرئيسية">&#8962; الرئيسية</a>
+        <a class="tool-btn" href="report.html" title="استمارة التحقق">&#9776; استمارة التحقق</a>
+      </div>
+      <div class="toolbar-left">
+        <button class="tool-btn primary" id="printBtn" type="button">&#128424; طباعة / تصدير PDF</button>
+      </div>
+    </nav>
+
+    <!-- صفحة التقرير -->
+    <main class="report-page" id="reportPage">
+
+      <!-- ===== الكليشة / الترويسة ===== -->
+      <header class="letterhead">
+        <div class="lh-col lh-right">
+          <p class="lh-line lh-big">المملكة العربية السعودية</p>
+          <p class="lh-line lh-big">وزارة التعليم</p>
+          <p class="lh-line" id="regionDisplay">الإدارة العامة للتعليم بالمنطقة الشرقية</p>
+          <p class="lh-line" id="schoolDisplay">اسم المدرسة هنا</p>
+        </div>
+        <div class="lh-col lh-center">
+          <img class="lh-logo" src="وزارة التعليم.png" alt="شعار وزارة التعليم" />
+        </div>
+        <div class="lh-col lh-left">
+          <p class="lh-line lh-big">تقرير التقدم والإنجاز</p>
+          <p class="lh-line">مؤشرات التقويم والاعتماد المدرسي</p>
+          <p class="lh-line lh-date" id="reportDate"></p>
+          <p class="lh-line lh-hijri" id="reportDateHijri"></p>
+        </div>
+      </header>
+      <div class="lh-divider"></div>
+
+      <!-- ===== الملخص التنفيذي ===== -->
+      <section class="exec-summary">
+        <h2 class="section-heading"><span class="sh-icon">&#9670;</span> الملخص التنفيذي</h2>
+        <div class="summary-grid" id="summaryGrid">
+          <!-- يتم ملؤها بالجافاسكربت -->
+        </div>
+      </section>
+
+      <!-- ===== مؤشر الإنجاز الكلي ===== -->
+      <section class="overall-progress-section">
+        <div class="overall-ring-wrap" id="overallRing">
+          <!-- SVG ring -->
+        </div>
+        <div class="overall-details" id="overallDetails">
+          <!-- legend items -->
+        </div>
+      </section>
+
+      <!-- ===== تقدم المجالات ===== -->
+      <section class="domains-section">
+        <h2 class="section-heading"><span class="sh-icon">&#9670;</span> تقدم المجالات الأربعة</h2>
+        <div class="domains-grid" id="domainsGrid">
+          <!-- domain cards -->
+        </div>
+      </section>
+
+      <!-- ===== تقدم المعايير ===== -->
+      <section class="standards-section">
+        <h2 class="section-heading"><span class="sh-icon">&#9670;</span> تفصيل المعايير حسب المجال</h2>
+        <div id="standardsContent">
+          <!-- standards tables per domain -->
+        </div>
+      </section>
+
+      <!-- ===== المؤشرات المكتملة ===== -->
+      <section class="indicators-section">
+        <h2 class="section-heading completed-heading"><span class="sh-icon">&#9670;</span> المؤشرات المكتملة</h2>
+        <div id="completedIndicators"></div>
+      </section>
+
+      <!-- ===== المؤشرات قيد التنفيذ ===== -->
+      <section class="indicators-section">
+        <h2 class="section-heading inprogress-heading"><span class="sh-icon">&#9670;</span> المؤشرات قيد التنفيذ</h2>
+        <div id="inProgressIndicators"></div>
+      </section>
+
+      <!-- ===== المؤشرات التي لم تبدأ ===== -->
+      <section class="indicators-section">
+        <h2 class="section-heading notstarted-heading"><span class="sh-icon">&#9670;</span> المؤشرات التي لم يبدأ العمل بها</h2>
+        <div id="notStartedIndicators"></div>
+      </section>
+
+      <!-- ===== التوصيات ===== -->
+      <section class="recommendations-section">
+        <h2 class="section-heading"><span class="sh-icon">&#9670;</span> التوصيات والإجراءات المقترحة</h2>
+        <div id="recommendations"></div>
+      </section>
+
+      <!-- ===== التوقيعات ===== -->
+      <section class="signatures-section">
+        <div class="sig-box">
+          <p class="sig-role">إعداد: منسق/ة الجودة والتميز</p>
+          <p class="sig-name">الاسم: .................................</p>
+          <p class="sig-sign">التوقيع: .................................</p>
+          <p class="sig-date-line">التاريخ: .................................</p>
+        </div>
+        <div class="sig-box">
+          <p class="sig-role">اعتماد: قائد/ة المدرسة</p>
+          <p class="sig-name">الاسم: .................................</p>
+          <p class="sig-sign">التوقيع: .................................</p>
+          <p class="sig-date-line">التاريخ: .................................</p>
+        </div>
+        <div class="sig-box">
+          <p class="sig-role">المشرف/ة التربوي</p>
+          <p class="sig-name">الاسم: .................................</p>
+          <p class="sig-sign">التوقيع: .................................</p>
+          <p class="sig-date-line">التاريخ: .................................</p>
+        </div>
+      </section>
+
+      <!-- ===== التذييل ===== -->
+      <footer class="report-footer">
+        <p>تقرير صادر من منصة متابعة مؤشرات التقويم والاعتماد المدرسي</p>
+        <p id="footerDate"></p>
+      </footer>
+
+    </main>
+
+    <script src="progress-report.js"></script>
+  </body>
+</html>
