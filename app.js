@@ -1822,6 +1822,7 @@ function reportBadgeCls(status) {
 
 function openPrintableReport() {
   const data = getReportData();
+  const moeLogoUrl = "https://raw.githubusercontent.com/bndrjj/selfereoprt/main/%D9%88%D8%B2%D8%A7%D8%B1%D8%A9%20%D8%A7%D9%84%D8%AA%D8%B9%D9%84%D9%8A%D9%85.png";
 
   const standardSections = data.byStandard
     .map((group) => {
@@ -1895,7 +1896,7 @@ function openPrintableReport() {
   <body>
     <main class="r-wrap">
       <header class="r-header">
-        <img class="r-logo" src="وزارة التعليم.png" alt="شعار وزارة التعليم" />
+        <img class="r-logo" src="${moeLogoUrl}" alt="شعار وزارة التعليم" />
         <div class="r-klisha">
           <h1>وزارة التعليم السعودية - تقرير إنجاز المؤشرات</h1>
           <p>تاريخ إنشاء التقرير: ${data.generatedAt}</p>
