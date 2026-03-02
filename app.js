@@ -1388,9 +1388,9 @@ function renderBackupPanel() {
     </div>
 
     <div class="backup-groups">
-      <div class="backup-group">
-        <p class="backup-group-title">التنقل والتقارير</p>
-        <div class="backup-actions">
+      <div class="backup-group backup-group-top">
+        <p class="backup-group-title"><span class="group-title-icon">📑</span> التقارير والتنقل</p>
+        <div class="backup-actions backup-actions-top">
           <button class="backup-btn backup-btn-nav" data-backup="school-info">
             <span class="btn-icon">⚙️</span>
             <span>بيانات المدرسة والفريق</span>
@@ -1403,12 +1403,16 @@ function renderBackupPanel() {
             <span class="btn-icon">📊</span>
             <span>تقرير التقدم والإنجاز (PDF)</span>
           </a>
+          <button class="backup-btn backup-btn-nav" data-backup="report">
+            <span class="btn-icon">🖨️</span>
+            <span>تقرير الإنجاز الفوري (A4)</span>
+          </button>
         </div>
       </div>
 
-      <div class="backup-group">
-        <p class="backup-group-title">حفظ البيانات واستعادتها</p>
-        <div class="backup-actions">
+      <div class="backup-group backup-group-bottom">
+        <p class="backup-group-title"><span class="group-title-icon">🔒</span> حفظ البيانات واستعادتها</p>
+        <div class="backup-actions backup-actions-bottom">
           <button class="backup-btn backup-btn-primary" data-backup="download">
             <span class="btn-icon">💾</span>
             <span>نسخة احتياطية</span>
@@ -1417,10 +1421,6 @@ function renderBackupPanel() {
             <span class="btn-icon">📁</span>
             <span>استعادة نسخة من ملف</span>
           </label>
-          <button class="backup-btn backup-btn-outline" data-backup="report">
-            <span class="btn-icon">🖨️</span>
-            <span>تقرير الإنجاز الفوري (A4)</span>
-          </button>
           <button class="backup-btn backup-btn-danger" data-backup="clear">
             <span class="btn-icon">🗑</span>
             <span>مسح البيانات بالكامل</span>
