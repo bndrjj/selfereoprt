@@ -1594,6 +1594,7 @@ function clearAllData() {
   localStorage.removeItem(storageKey);
   localStorage.removeItem("school-quality-tracker");
   localStorage.removeItem("accreditation-checklist-v3");
+  localStorage.removeItem("school-info");
   state.checks = {};
   closeClearDataModal();
   render();
