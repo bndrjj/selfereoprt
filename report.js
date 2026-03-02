@@ -1,4 +1,4 @@
-/* استبدل محتوى report.js الحالي بهذا الكود */
+/* report.js — قائمة التحقق الشاملة للاعتماد المدرسي */
 
 const indicators = [
   { domain: 'الإدارة المدرسية', standard: 'التخطيط', code: '1-1-1-1', text: 'تضع المدرسة خطة تشغيلية شاملة، وفق أهداف تطويرية محددة.', evidence: 'شاهد١، شاهد٢، شاهد٣.', docs: 'وثيقة١، وثيقة٢، وثيقة٣.' },
@@ -55,25 +55,23 @@ const indicators = [
   { domain: 'البيئة المدرسية', standard: 'الأمن والسلامة', code: '4-2-1-3', text: 'تتابع المدرسة نظافة المبنى المدرسي وجميع مرافقه بشكل مستمر', evidence: 'شاهد١، شاهد٢، شاهد٣.', docs: 'وثيقة١، وثيقة٢، وثيقة٣.' },
 ];
 
+// ─── الحالة والتخزين ───────────────────────────────────────
 const STORAGE_KEY = 'accreditation-checklist-v3';
 const persisted = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-const allDomains = [...new Set(indicators.map((i) => i.domain))];
 const state = {
-  filterDomain: persisted.filterDomain || allDomains[0],
-  filterStandard: persisted.filterStandard || 'الكل',
   regionName: persisted.regionName || 'الإدارة العامة للتعليم بالمنطقة الشرقية',
   schoolName: persisted.schoolName || 'اسم المدرسة هنا',
   rows: persisted.rows || {}
 };
 
+const PROGRESS_STEPS = [0, 25, 50, 75, 100];
 const availOptions = ['متوفرة بالكامل', 'متوفرة جزئياً', 'غير متوفرة'];
 const ownerOptions = ['فريق التميز', 'مدير المدرسة', 'المرشد الطلابي', 'رائد النشاط', 'معلمين المواد'];
 
-const domainFilter = document.getElementById('domainFilter');
-const standardFilter = document.getElementById('standardFilter');
-const rowsEl = document.getElementById('rows');
 const summaryEl = document.getElementById('summary');
+const checklistEl = document.getElementById('checklist-container');
 
+// ─── دوال المساعدة ───────────────────────────────────────
 function esc(text) {
   return String(text)
     .replaceAll('&', '&amp;')
@@ -87,7 +85,9 @@ function save() {
 }
 
 function todayAr() {
-  return new Date().toLocaleDateString('ar-SA-u-ca-islamic', { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' });
+  return new Date().toLocaleDateString('ar-SA-u-ca-islamic', {
+    weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit'
+  });
 }
 
 document.getElementById('todayLine').textContent = todayAr();
@@ -108,6 +108,7 @@ function editHeaderValue(key, label) {
   renderHeaderMeta();
 }
 
+// ─── منطق الحساب ───────────────────────────────────────
 function toNumberInRange(value, min = 0, max = 100) {
   const parsed = Number(value);
   if (Number.isNaN(parsed)) return min;
@@ -130,7 +131,6 @@ function deriveSelfEvalFromProgress(progress) {
 function rowState(code) {
   const raw = state.rows[code] || {};
   const progress = toNumberInRange(raw.progress ?? 0, 0, 100);
-
   return {
     progress,
     status: deriveStatusFromProgress(progress),
@@ -147,68 +147,53 @@ function setRowValue(code, key, value) {
   state.rows[code] = { ...currentRaw, [key]: nextValue };
   save();
   renderSummary();
+  updateIndicatorDisplay(code);
 }
 
-function optionList(options, selected) {
-  return options.map((item) => `<option value="${item}" ${item === selected ? 'selected' : ''}>${item}</option>`).join('');
+function statusClass(status) {
+  if (status === 'مكتمل') return 'done';
+  if (status === 'قيد التنفيذ') return 'inprogress';
+  return 'pending';
 }
 
-function fillFilters() {
-  const domains = [...new Set(indicators.map((i) => i.domain))];
-  domainFilter.innerHTML = domains.map((d) => `<option value="${d}">${d}</option>`).join('');
-  if (!domains.includes(state.filterDomain)) state.filterDomain = domains[0];
-  domainFilter.value = state.filterDomain;
-
-  const filteredByDomain = indicators.filter((i) => i.domain === state.filterDomain);
-  const standards = ['الكل', ...new Set(filteredByDomain.map((i) => i.standard))];
-  standardFilter.innerHTML = standards.map((s) => `<option value="${s}">${s}</option>`).join('');
-  if (!standards.includes(state.filterStandard)) state.filterStandard = 'الكل';
-  standardFilter.value = state.filterStandard;
+function closestProgressStep(progress) {
+  return PROGRESS_STEPS.reduce((prev, curr) =>
+    Math.abs(curr - progress) < Math.abs(prev - progress) ? curr : prev
+  );
 }
 
-function getFilteredIndicators() {
-  return indicators.filter((item) => {
-    const byDomain = item.domain === state.filterDomain;
-    const byStandard = state.filterStandard === 'الكل' || item.standard === state.filterStandard;
-    return byDomain && byStandard;
-  });
-}
-
+// ─── إحصاءات ───────────────────────────────────────
 function getStatusStats(items) {
   const completed = items.filter((i) => rowState(i.code).status === 'مكتمل').length;
   const inProgress = items.filter((i) => rowState(i.code).status === 'قيد التنفيذ').length;
   const pending = items.filter((i) => rowState(i.code).status === 'لم يبدأ').length;
   const remaining = inProgress + pending;
   const completionRate = items.length ? Math.round((completed / items.length) * 100) : 0;
-
   return { completed, inProgress, pending, remaining, completionRate };
 }
 
+function getAvailabilityStats(items) {
+  const full = items.filter((i) => rowState(i.code).availability === 'متوفرة بالكامل').length;
+  const partial = items.filter((i) => rowState(i.code).availability === 'متوفرة جزئياً').length;
+  const missing = items.filter((i) => rowState(i.code).availability === 'غير متوفرة').length;
+  return { full, partial, missing };
+}
+
+// ─── دوال التصدير ───────────────────────────────────────
 function buildExecutionTable(items) {
   const grouped = new Map();
-
   items.forEach((item) => {
     const key = `${item.domain}__${item.standard}`;
     if (!grouped.has(key)) {
-      grouped.set(key, {
-        domain: item.domain,
-        standard: item.standard,
-        total: 0,
-        completed: 0,
-        inProgress: 0,
-        pending: 0
-      });
+      grouped.set(key, { domain: item.domain, standard: item.standard, total: 0, completed: 0, inProgress: 0, pending: 0 });
     }
-
     const bucket = grouped.get(key);
     bucket.total += 1;
-
     const status = rowState(item.code).status;
     if (status === 'مكتمل') bucket.completed += 1;
     if (status === 'قيد التنفيذ') bucket.inProgress += 1;
     if (status === 'لم يبدأ') bucket.pending += 1;
   });
-
   return [...grouped.values()].map((bucket) => ({
     ...bucket,
     remaining: bucket.inProgress + bucket.pending,
@@ -222,39 +207,18 @@ function getNotCompletedIndicators(items) {
     .filter((item) => item.status !== 'مكتمل');
 }
 
-function getAvailabilityStats(items) {
-  const full = items.filter((i) => rowState(i.code).availability === 'متوفرة بالكامل').length;
-  const partial = items.filter((i) => rowState(i.code).availability === 'متوفرة جزئياً').length;
-  const missing = items.filter((i) => rowState(i.code).availability === 'غير متوفرة').length;
-  return { full, partial, missing };
-}
-
 function buildProcedureReflection(items) {
   const grouped = new Map();
-
   items.forEach((item) => {
     const key = `${item.domain}__${item.standard}`;
     const current = rowState(item.code);
-
     if (!grouped.has(key)) {
-      grouped.set(key, {
-        domain: item.domain,
-        standard: item.standard,
-        doneCount: 0,
-        remainingCount: 0,
-        owners: new Set(),
-        doneItems: [],
-        gapItems: []
-      });
+      grouped.set(key, { domain: item.domain, standard: item.standard, doneCount: 0, remainingCount: 0, owners: new Set(), doneItems: [], gapItems: [] });
     }
-
     const bucket = grouped.get(key);
-
     if (current.owner) bucket.owners.add(current.owner);
-
     const noteText = current.notes && current.notes.trim() ? ` | الإجراء: ${current.notes.trim()}` : '';
     const baseText = `${item.code} - ${item.text}`;
-
     if (current.status === 'مكتمل' || current.status === 'قيد التنفيذ') {
       bucket.doneCount += 1;
       bucket.doneItems.push(`${baseText}${noteText}`);
@@ -264,7 +228,6 @@ function buildProcedureReflection(items) {
       bucket.gapItems.push(`${baseText} | ${evidenceState}${noteText}`);
     }
   });
-
   return [...grouped.values()].map((row) => ({
     ...row,
     ownersText: row.owners.size ? [...row.owners].join('، ') : '-',
@@ -273,103 +236,177 @@ function buildProcedureReflection(items) {
   }));
 }
 
+// ─── عرض شريط الملخص الإجمالي ───────────────────────────────────────
 function renderSummary() {
-  const items = getFilteredIndicators();
-  const stats = getStatusStats(items);
-  const avgProgress = items.length
-    ? Math.round(items.reduce((sum, item) => sum + rowState(item.code).progress, 0) / items.length)
+  const stats = getStatusStats(indicators);
+  const avail = getAvailabilityStats(indicators);
+  const avgProgress = indicators.length
+    ? Math.round(indicators.reduce((sum, i) => sum + rowState(i.code).progress, 0) / indicators.length)
     : 0;
+
   summaryEl.innerHTML = `
-    <span>المجال المختار: ${esc(state.filterDomain)}</span>
-    <span>المعيار المختار: ${esc(state.filterStandard)}</span>
-    <span>عدد المؤشرات المعروضة: ${items.length}</span>
-    <span>مكتمل: ${stats.completed}</span>
-    <span>قيد التنفيذ (تنفيذ جزئي): ${stats.inProgress}</span>
-    <span>لم يبدأ: ${stats.pending}</span>
-    <span>المتبقي: ${stats.remaining}</span>
-    <span>نسبة الإنجاز (مكتمل): ${stats.completionRate}%</span>
-    <span>متوسط نسبة الإنجاز: ${avgProgress}%</span>
+    <div class="sc"><span class="sc-v">${indicators.length}</span><span class="sc-l">إجمالي المؤشرات</span></div>
+    <div class="sc sc-done"><span class="sc-v">${stats.completed}</span><span class="sc-l">مكتمل</span></div>
+    <div class="sc sc-prog"><span class="sc-v">${stats.inProgress}</span><span class="sc-l">قيد التنفيذ</span></div>
+    <div class="sc sc-pend"><span class="sc-v">${stats.pending}</span><span class="sc-l">لم يبدأ</span></div>
+    <div class="sc sc-pct"><span class="sc-v">${stats.completionRate}%</span><span class="sc-l">نسبة الإنجاز</span></div>
+    <div class="sc"><span class="sc-v">${avgProgress}%</span><span class="sc-l">متوسط الإنجاز</span></div>
+    <div class="sc sc-afull"><span class="sc-v">${avail.full}</span><span class="sc-l">أدلة كاملة</span></div>
+    <div class="sc sc-apart"><span class="sc-v">${avail.partial}</span><span class="sc-l">أدلة جزئية</span></div>
+    <div class="sc sc-anone"><span class="sc-v">${avail.missing}</span><span class="sc-l">بدون أدلة</span></div>
   `;
 }
 
-function renderRows() {
-  const items = getFilteredIndicators();
+// ─── بناء HTML لمؤشر واحد ───────────────────────────────────────
+function buildIndicatorHTML(item) {
+  const cur = rowState(item.code);
+  const sc = statusClass(cur.status);
+  const closest = closestProgressStep(cur.progress);
 
-  let lastStandard = null;
-  rowsEl.innerHTML = items
-    .map((item) => {
-      const current = rowState(item.code);
-      const groupRow = item.standard !== lastStandard
-        ? `<tr class="standard-row"><td colspan="11">المعيار: ${esc(item.standard)}</td></tr>`
-        : '';
-      lastStandard = item.standard;
+  const progressPills = PROGRESS_STEPS.map((val) => `
+    <div class="pill">
+      <input type="radio" id="prg-${item.code}-${val}" name="prg-${item.code}"
+             value="${val}" data-code="${item.code}" data-key="progress"
+             ${closest === val ? 'checked' : ''}>
+      <label for="prg-${item.code}-${val}">${val}%</label>
+    </div>`).join('');
 
-      return `${groupRow}
-        <tr>
-          <td>${esc(item.domain)}</td>
-          <td>${esc(item.standard)}</td>
-          <td class="indicator-cell">(${esc(item.code)}) ${esc(item.text)}</td>
-          <td class="evidence-cell"><details><summary>عرض الشواهد</summary>${esc(item.evidence)}</details></td>
-          <td class="docs-cell"><details><summary>عرض الوثائق</summary>${esc(item.docs)}</details></td>
-          <td>
-            <input class="row-input" type="number" min="0" max="100" step="1" data-code="${item.code}" data-key="progress" value="${current.progress}" />
-          </td>
-          <td class="center-cell"><strong>${esc(current.status)}</strong></td>
-          <td>
-            <select class="row-select" data-code="${item.code}" data-key="availability">
-              ${optionList(availOptions, current.availability)}
-            </select>
-          </td>
-          <td class="center-cell"><strong>${esc(current.selfEval)}</strong></td>
-          <td>
-            <select class="row-select" data-code="${item.code}" data-key="owner">
-              ${optionList(ownerOptions, current.owner)}
-            </select>
-          </td>
-          <td>
-            <textarea class="row-textarea" data-code="${item.code}" data-key="notes" placeholder="الإجراء التصحيحي">${esc(current.notes)}</textarea>
-          </td>
-        </tr>
-      `;
-    })
-    .join('');
+  const availPills = availOptions.map((opt, idx) => `
+    <div class="pill">
+      <input type="radio" id="avl-${item.code}-${idx}" name="avl-${item.code}"
+             value="${opt}" data-code="${item.code}" data-key="availability"
+             ${cur.availability === opt ? 'checked' : ''}>
+      <label for="avl-${item.code}-${idx}">${esc(opt)}</label>
+    </div>`).join('');
 
-  rowsEl.querySelectorAll('select.row-select, textarea.row-textarea, input.row-input').forEach((el) => {
-    const handler = () => setRowValue(el.dataset.code, el.dataset.key, el.value);
-    el.addEventListener('change', handler);
-    if (el.tagName !== 'SELECT') el.addEventListener('input', handler);
+  const ownerOpts = ownerOptions.map((o) =>
+    `<option value="${esc(o)}" ${cur.owner === o ? 'selected' : ''}>${esc(o)}</option>`
+  ).join('');
+
+  return `
+    <div class="ind-item ind-${sc}" id="ind-${item.code}">
+      <div class="ind-top">
+        <span class="ind-code">${esc(item.code)}</span>
+        <span class="ind-text">${esc(item.text)}</span>
+        <span class="ind-badge badge-${sc} js-status">${esc(cur.status)}</span>
+        <span class="ind-eval js-eval">تقييم: ${esc(cur.selfEval)}</span>
+      </div>
+      <div class="ind-body">
+        <div class="ctrl-row">
+          <span class="ctrl-lbl">نسبة الإنجاز</span>
+          <div class="pill-group prog-pills">${progressPills}</div>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-lbl">توفر الأدلة والوثائق</span>
+          <div class="pill-group avail-pills">${availPills}</div>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-lbl">المسؤول</span>
+          <select class="row-select" data-code="${item.code}" data-key="owner">
+            <option value="">— اختر —</option>
+            ${ownerOpts}
+          </select>
+          <span class="ctrl-lbl">ملاحظات / إجراء</span>
+          <input type="text" class="notes-inp" data-code="${item.code}" data-key="notes"
+                 value="${esc(cur.notes)}" placeholder="إجراء تصحيحي أو ملاحظة…">
+        </div>
+        <details class="ind-details">
+          <summary>الشواهد والوثائق المتوقعة</summary>
+          <div class="ind-details-body">
+            <span><strong>الشواهد:</strong> ${esc(item.evidence)}</span>
+            <span><strong>الوثائق:</strong> ${esc(item.docs)}</span>
+          </div>
+        </details>
+      </div>
+    </div>`;
+}
+
+// ─── عرض قائمة التحقق الكاملة ───────────────────────────────────────
+function renderChecklist() {
+  // تجميع بحسب المجال ثم المعيار
+  const byDomain = new Map();
+  indicators.forEach((item) => {
+    if (!byDomain.has(item.domain)) byDomain.set(item.domain, new Map());
+    const dm = byDomain.get(item.domain);
+    if (!dm.has(item.standard)) dm.set(item.standard, []);
+    dm.get(item.standard).push(item);
+  });
+
+  let html = '';
+  byDomain.forEach((standards, domain) => {
+    const domainItems = indicators.filter((i) => i.domain === domain);
+    const ds = getStatusStats(domainItems);
+
+    html += `
+      <div class="domain-block">
+        <div class="domain-hdr">
+          <span class="domain-name">${esc(domain)}</span>
+          <div class="domain-chips">
+            <span class="dchip">${domainItems.length} مؤشر</span>
+            <span class="dchip chip-done">✓ ${ds.completed} مكتمل</span>
+            <span class="dchip chip-prog">◑ ${ds.inProgress} جارٍ</span>
+            <span class="dchip chip-pend">○ ${ds.pending} لم يبدأ</span>
+            <span class="dchip chip-pct">${ds.completionRate}%</span>
+          </div>
+        </div>
+        <div class="domain-bar"><div class="domain-bar-fill" style="width:${ds.completionRate}%"></div></div>`;
+
+    standards.forEach((items, standard) => {
+      const ss = getStatusStats(items);
+      html += `
+        <div class="std-block">
+          <div class="std-hdr">
+            <span class="std-name">${esc(standard)}</span>
+            <span class="std-stats">${items.length} مؤشر &nbsp;|&nbsp; مكتمل: ${ss.completed} &nbsp;|&nbsp; ${ss.completionRate}%</span>
+          </div>
+          <div class="ind-list">
+            ${items.map((item) => buildIndicatorHTML(item)).join('')}
+          </div>
+        </div>`;
+    });
+
+    html += '</div>';
+  });
+
+  checklistEl.innerHTML = html;
+
+  // ربط الأحداث
+  checklistEl.querySelectorAll('input[type=radio]').forEach((el) => {
+    el.addEventListener('change', () => setRowValue(el.dataset.code, el.dataset.key, el.value));
+  });
+  checklistEl.querySelectorAll('select.row-select').forEach((el) => {
+    el.addEventListener('change', () => setRowValue(el.dataset.code, el.dataset.key, el.value));
+  });
+  checklistEl.querySelectorAll('input.notes-inp').forEach((el) => {
+    el.addEventListener('input', () => setRowValue(el.dataset.code, el.dataset.key, el.value));
   });
 }
 
+// ─── تحديث عنصر مؤشر واحد بعد التعديل ───────────────────────────────────────
+function updateIndicatorDisplay(code) {
+  const cur = rowState(code);
+  const sc = statusClass(cur.status);
+  const item = document.getElementById(`ind-${code}`);
+  if (!item) return;
+  item.className = `ind-item ind-${sc}`;
+  const badge = item.querySelector('.js-status');
+  if (badge) { badge.textContent = cur.status; badge.className = `ind-badge badge-${sc} js-status`; }
+  const evalEl = item.querySelector('.js-eval');
+  if (evalEl) evalEl.textContent = `تقييم: ${cur.selfEval}`;
+}
+
+// ─── الدالة الرئيسية ───────────────────────────────────────
 function render() {
-  fillFilters();
-  renderRows();
+  renderChecklist();
   renderSummary();
 }
 
-domainFilter.addEventListener('change', () => {
-  state.filterDomain = domainFilter.value;
-  state.filterStandard = 'الكل';
-  save();
-  render();
-});
-
-document.getElementById('editRegion')?.addEventListener('click', () => {
-  editHeaderValue('regionName', 'المنطقة التعليمية');
-});
-
-document.getElementById('editSchool')?.addEventListener('click', () => {
-  editHeaderValue('schoolName', 'اسم المدرسة');
-});
-
+// ─── أحداث رأس الصفحة ───────────────────────────────────────
+document.getElementById('editRegion')?.addEventListener('click', () => editHeaderValue('regionName', 'المنطقة التعليمية'));
+document.getElementById('editSchool')?.addEventListener('click', () => editHeaderValue('schoolName', 'اسم المدرسة'));
 renderHeaderMeta();
 
-standardFilter.addEventListener('change', () => {
-  state.filterStandard = standardFilter.value;
-  save();
-  render();
-});
-
+// ─── أزرار شريط الأدوات ───────────────────────────────────────
 document.getElementById('saveBtn').addEventListener('click', () => {
   save();
   alert('تم حفظ التحديثات بنجاح.');
@@ -383,9 +420,7 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   location.reload();
 });
 
-// =========================================================
-//  هذا هو الجزء المسؤول عن توليد التقرير الاحترافي الجديد
-// =========================================================
+// ─── زر التصدير (التقرير الاحترافي المستقل) ───────────────────────────────────────
 document.getElementById('exportBtn').addEventListener('click', () => {
   const items = indicators.slice();
   const stats = getStatusStats(items);
@@ -395,27 +430,17 @@ document.getElementById('exportBtn').addEventListener('click', () => {
   const proceduresReflection = buildProcedureReflection(items);
   const exportDate = todayAr();
   const exportDateTime = new Date().toLocaleString('en-US', {
-    year: '2-digit',
-    month: 'numeric',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
+    year: '2-digit', month: 'numeric', day: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true
   });
 
   let lastStandard = null;
   const rowsHtml = items.map((item) => {
     const current = rowState(item.code);
     const standardRow = item.standard !== lastStandard
-      ? `
-        <tr class="row-standard">
-          <td colspan="8">المعيار: ${esc(item.standard)}</td>
-        </tr>
-      `
+      ? `<tr class="row-standard"><td colspan="8">المعيار: ${esc(item.standard)}</td></tr>`
       : '';
-
     lastStandard = item.standard;
-
     return `
       ${standardRow}
       <tr>
@@ -430,8 +455,7 @@ document.getElementById('exportBtn').addEventListener('click', () => {
         <td class="center-text">${esc(current.availability)}</td>
         <td class="center-text">${esc(current.selfEval)}</td>
         <td class="small-text">${esc(current.notes || '-')}</td>
-      </tr>
-    `;
+      </tr>`;
   }).join('');
 
   const executionTableHtml = executionTable.length
@@ -445,9 +469,8 @@ document.getElementById('exportBtn').addEventListener('click', () => {
           <td class="center-text">${row.pending}</td>
           <td class="center-text">${row.remaining}</td>
           <td class="center-text">${row.completionRate}%</td>
-        </tr>
-      `).join('')
-    : '<tr><td colspan="8" class="center-text">لا توجد بيانات مطابقة للمرشحات الحالية.</td></tr>';
+        </tr>`).join('')
+    : '<tr><td colspan="8" class="center-text">لا توجد بيانات.</td></tr>';
 
   const notCompletedHtml = notCompleted.length
     ? notCompleted.map((item) => `
@@ -457,8 +480,7 @@ document.getElementById('exportBtn').addEventListener('click', () => {
           <td>${esc(item.domain)}</td>
           <td>${esc(item.standard)}</td>
           <td class="center-text">${esc(item.status)}</td>
-        </tr>
-      `).join('')
+        </tr>`).join('')
     : '<tr><td colspan="5" class="center-text">جميع المؤشرات مكتملة.</td></tr>';
 
   const proceduresReflectionHtml = proceduresReflection.length
@@ -471,9 +493,8 @@ document.getElementById('exportBtn').addEventListener('click', () => {
           <td>${esc(row.ownersText)}</td>
           <td class="small-text">${row.doneText}</td>
           <td class="small-text">${row.gapText}</td>
-        </tr>
-      `).join('')
-    : '<tr><td colspan="7" class="center-text">لا توجد بيانات مطابقة للمرشحات الحالية.</td></tr>';
+        </tr>`).join('')
+    : '<tr><td colspan="7" class="center-text">لا توجد بيانات.</td></tr>';
 
   const popup = window.open('', '_blank', 'width=1280,height=900');
   if (!popup) return;
@@ -489,204 +510,44 @@ document.getElementById('exportBtn').addEventListener('click', () => {
       <style>
         @page { size: A4 portrait; margin: 10mm; }
         :root {
-          --teal-900: #0f5d57;
-          --teal-800: #156c65;
-          --teal-700: #1d827a;
-          --teal-100: #ecf5f4;
-          --line: #c8dcd9;
-          --text: #234946;
-          --muted: #5d7471;
+          --teal-900: #0f5d57; --teal-800: #156c65; --teal-700: #1d827a;
+          --teal-100: #ecf5f4; --line: #c8dcd9; --text: #234946; --muted: #5d7471;
         }
         * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        body {
-          margin: 0;
-          font-family: 'Tajawal', sans-serif;
-          color: var(--text);
-          background: #fff;
-        }
-
+        body { margin: 0; font-family: 'Tajawal', sans-serif; color: var(--text); background: #fff; }
         .sheet { width: 100%; }
-
-        .meta-top {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          color: #3d5956;
-          font-size: 12px;
-          margin-bottom: 12px;
-          font-weight: 600;
-        }
-
-        .header-main {
-          display: grid;
-          grid-template-columns: 1fr 220px 1fr;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 14px;
-          border-bottom: 3px solid var(--teal-800);
-          padding-bottom: 12px;
-        }
+        .meta-top { display: flex; justify-content: space-between; align-items: center; color: #3d5956; font-size: 12px; margin-bottom: 12px; font-weight: 600; }
+        .header-main { display: grid; grid-template-columns: 1fr 220px 1fr; align-items: center; gap: 12px; margin-bottom: 14px; border-bottom: 3px solid var(--teal-800); padding-bottom: 12px; }
         .header-col { min-height: 140px; }
         .header-col.right { text-align: right; }
         .header-col.left { text-align: left; }
-        .header-col p {
-          margin: 0 0 4px;
-          font-size: 15px;
-          line-height: 1.45;
-          color: var(--teal-900);
-          font-weight: 800;
-        }
-        .header-col .sub {
-          font-size: 13px;
-          font-weight: 700;
-          color: var(--text);
-        }
-
-        .logo-wrap {
-          text-align: center;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .logo-wrap img {
-          width: 175px;
-          max-width: 100%;
-          height: auto;
-          object-fit: contain;
-        }
-
-        .summary-bar {
-          display: grid;
-          grid-template-columns: repeat(6, minmax(0, 1fr));
-          border: 1px solid var(--line);
-          border-radius: 14px;
-          overflow: hidden;
-          margin-bottom: 14px;
-        }
-        .summary-item {
-          border-left: 1px solid var(--line);
-          padding: 10px 8px;
-          text-align: center;
-          background: #fff;
-        }
+        .header-col p { margin: 0 0 4px; font-size: 15px; line-height: 1.45; color: var(--teal-900); font-weight: 800; }
+        .header-col .sub { font-size: 13px; font-weight: 700; color: var(--text); }
+        .logo-wrap { text-align: center; display: flex; align-items: center; justify-content: center; }
+        .logo-wrap img { width: 175px; max-width: 100%; height: auto; object-fit: contain; }
+        .summary-bar { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-bottom: 14px; }
+        .summary-item { border-left: 1px solid var(--line); padding: 10px 8px; text-align: center; background: #fff; }
         .summary-item:last-child { border-left: none; }
         .summary-item.highlight { background: var(--teal-100); }
-        .summary-label {
-          display: block;
-          font-size: 12px;
-          color: var(--muted);
-          margin-bottom: 4px;
-          font-weight: 700;
-        }
-        .summary-value {
-          display: block;
-          color: var(--teal-900);
-          font-size: 26px;
-          line-height: 1;
-          font-weight: 800;
-        }
-        .summary-value.text {
-          font-size: 19px;
-        }
-
-        .section-title {
-          margin: 18px 0 8px;
-          padding: 8px 10px;
-          border-right: 4px solid var(--teal-700);
-          background: #f2f8f7;
-          color: var(--teal-900);
-          font-size: 15px;
-          font-weight: 800;
-        }
-
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          table-layout: fixed;
-          border: 1px solid var(--line);
-        }
-        th {
-          background: var(--teal-800);
-          color: #fff;
-          border: 1px solid #0d4f4a;
-          font-size: 14px;
-          font-weight: 700;
-          padding: 10px 6px;
-          text-align: center;
-        }
-        td {
-          border: 1px solid #d5e5e2;
-          font-size: 14px;
-          line-height: 1.4;
-          padding: 8px 8px;
-          vertical-align: top;
-        }
-        .row-standard td {
-          background: #edf6f5;
-          color: var(--teal-900);
-          font-size: 14px;
-          font-weight: 800;
-          padding: 8px 10px;
-        }
-
-        .col-indicator { width: 22%; }
-        .col-evidence { width: 20%; }
-        .col-docs { width: 16%; }
-        .col-status { width: 8%; }
-        .col-avail { width: 10%; }
-        .col-eval { width: 6%; }
-        .col-notes { width: 10%; }
-
-        .code-box {
-          display: inline-block;
-          padding: 3px 8px;
-          border-radius: 8px;
-          background: var(--teal-100);
-          color: var(--teal-900);
-          font-size: 13px;
-          font-weight: 800;
-          margin-bottom: 5px;
-        }
+        .summary-label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; font-weight: 700; }
+        .summary-value { display: block; color: var(--teal-900); font-size: 26px; line-height: 1; font-weight: 800; }
+        .summary-value.text { font-size: 19px; }
+        .section-title { margin: 18px 0 8px; padding: 8px 10px; border-right: 4px solid var(--teal-700); background: #f2f8f7; color: var(--teal-900); font-size: 15px; font-weight: 800; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; border: 1px solid var(--line); }
+        th { background: var(--teal-800); color: #fff; border: 1px solid #0d4f4a; font-size: 14px; font-weight: 700; padding: 10px 6px; text-align: center; }
+        td { border: 1px solid #d5e5e2; font-size: 14px; line-height: 1.4; padding: 8px 8px; vertical-align: top; }
+        .row-standard td { background: #edf6f5; color: var(--teal-900); font-size: 14px; font-weight: 800; padding: 8px 10px; }
+        .col-indicator { width: 22%; } .col-evidence { width: 20%; } .col-docs { width: 16%; }
+        .col-status { width: 8%; } .col-avail { width: 10%; } .col-eval { width: 6%; } .col-notes { width: 10%; }
+        .code-box { display: inline-block; padding: 3px 8px; border-radius: 8px; background: var(--teal-100); color: var(--teal-900); font-size: 13px; font-weight: 800; margin-bottom: 5px; }
         .ind-text { font-weight: 800; color: #1f413d; }
         .small-text { color: #35524f; }
-        .center-text {
-          text-align: center;
-          vertical-align: middle;
-          font-weight: 700;
-        }
-
-        .signatures {
-          display: flex;
-          justify-content: space-between;
-          gap: 48px;
-          margin-top: 28px;
-          page-break-inside: avoid;
-        }
-        .sig-item {
-          flex: 1;
-          text-align: center;
-        }
-        .sig-title {
-          color: var(--teal-900);
-          font-size: 28px;
-          font-weight: 800;
-          margin-bottom: 36px;
-        }
-        .sig-line {
-          border-top: 2px dashed #9bb3b0;
-          height: 1px;
-          width: 68%;
-          margin: 0 auto;
-        }
-
-        .footer-meta {
-          margin-top: 22px;
-          display: flex;
-          justify-content: space-between;
-          font-size: 11px;
-          color: #556c69;
-          direction: ltr;
-        }
+        .center-text { text-align: center; vertical-align: middle; font-weight: 700; }
+        .signatures { display: flex; justify-content: space-between; gap: 48px; margin-top: 28px; page-break-inside: avoid; }
+        .sig-item { flex: 1; text-align: center; }
+        .sig-title { color: var(--teal-900); font-size: 28px; font-weight: 800; margin-bottom: 36px; }
+        .sig-line { border-top: 2px dashed #9bb3b0; height: 1px; width: 68%; margin: 0 auto; }
+        .footer-meta { margin-top: 22px; display: flex; justify-content: space-between; font-size: 11px; color: #556c69; direction: ltr; }
       </style>
     </head>
     <body>
@@ -695,18 +556,15 @@ document.getElementById('exportBtn').addEventListener('click', () => {
           <span>تقرير الاعتماد المدرسي</span>
           <span>${esc(exportDateTime)}</span>
         </div>
-
         <header class="header-main">
           <div class="header-col right">
             <p>المملكة العربية السعودية</p>
             <p>وزارة التعليم</p>
             <p>${esc(state.regionName)}</p>
           </div>
-
           <div class="logo-wrap">
             <img src="وزارة التعليم.png" alt="شعار وزارة التعليم" />
           </div>
-
           <div class="header-col left">
             <p>نموذج المتابعة المستمرة</p>
             <p>تقرير قوائم التحقق للمؤشرات</p>
@@ -715,68 +573,27 @@ document.getElementById('exportBtn').addEventListener('click', () => {
         </header>
 
         <section class="summary-bar">
-          <div class="summary-item">
-            <span class="summary-label">المدرسة</span>
-            <span class="summary-value text">${esc(state.schoolName)}</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">نطاق التقرير</span>
-            <span class="summary-value text">جميع المجالات</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">المعايير</span>
-            <span class="summary-value text">جميع المعايير</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">إجمالي المؤشرات</span>
-            <span class="summary-value">${items.length}</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">مكتمل بالكامل</span>
-            <span class="summary-value">${stats.completed}</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">تنفيذ جزئي</span>
-            <span class="summary-value">${stats.inProgress}</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">لم يبدأ</span>
-            <span class="summary-value">${stats.pending}</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">أدلة متوفرة بالكامل</span>
-            <span class="summary-value">${availabilityStats.full}</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">أدلة متوفرة جزئياً</span>
-            <span class="summary-value">${availabilityStats.partial}</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">أدلة غير متوفرة</span>
-            <span class="summary-value">${availabilityStats.missing}</span>
-          </div>
-          <div class="summary-item highlight">
-            <span class="summary-label">نسبة الإنجاز (مكتمل)</span>
-            <span class="summary-value">${stats.completionRate}%</span>
-          </div>
-          <div class="summary-item highlight">
-            <span class="summary-label">متوسط نسبة الإنجاز</span>
-            <span class="summary-value">${Math.round(items.reduce((sum, item) => sum + rowState(item.code).progress, 0) / (items.length || 1))}%</span>
-          </div>
+          <div class="summary-item"><span class="summary-label">المدرسة</span><span class="summary-value text">${esc(state.schoolName)}</span></div>
+          <div class="summary-item"><span class="summary-label">نطاق التقرير</span><span class="summary-value text">جميع المجالات</span></div>
+          <div class="summary-item"><span class="summary-label">المعايير</span><span class="summary-value text">جميع المعايير</span></div>
+          <div class="summary-item"><span class="summary-label">إجمالي المؤشرات</span><span class="summary-value">${items.length}</span></div>
+          <div class="summary-item"><span class="summary-label">مكتمل بالكامل</span><span class="summary-value">${stats.completed}</span></div>
+          <div class="summary-item"><span class="summary-label">تنفيذ جزئي</span><span class="summary-value">${stats.inProgress}</span></div>
+          <div class="summary-item"><span class="summary-label">لم يبدأ</span><span class="summary-value">${stats.pending}</span></div>
+          <div class="summary-item"><span class="summary-label">أدلة متوفرة بالكامل</span><span class="summary-value">${availabilityStats.full}</span></div>
+          <div class="summary-item"><span class="summary-label">أدلة متوفرة جزئياً</span><span class="summary-value">${availabilityStats.partial}</span></div>
+          <div class="summary-item"><span class="summary-label">أدلة غير متوفرة</span><span class="summary-value">${availabilityStats.missing}</span></div>
+          <div class="summary-item highlight"><span class="summary-label">نسبة الإنجاز (مكتمل)</span><span class="summary-value">${stats.completionRate}%</span></div>
+          <div class="summary-item highlight"><span class="summary-label">متوسط نسبة الإنجاز</span><span class="summary-value">${Math.round(items.reduce((sum, item) => sum + rowState(item.code).progress, 0) / (items.length || 1))}%</span></div>
         </section>
 
         <h3 class="section-title">أولاً: جدول تتبع تنفيذ المؤشرات حسب المجال والمعيار</h3>
         <table>
           <thead>
             <tr>
-              <th>المجال</th>
-              <th>المعيار</th>
-              <th>إجمالي المؤشرات</th>
-              <th>مكتمل</th>
-              <th>تنفيذ جزئي</th>
-              <th>لم يبدأ</th>
-              <th>المتبقي</th>
-              <th>نسبة الإنجاز</th>
+              <th>المجال</th><th>المعيار</th><th>إجمالي المؤشرات</th>
+              <th>مكتمل</th><th>تنفيذ جزئي</th><th>لم يبدأ</th>
+              <th>المتبقي</th><th>نسبة الإنجاز</th>
             </tr>
           </thead>
           <tbody>${executionTableHtml}</tbody>
@@ -786,10 +603,8 @@ document.getElementById('exportBtn').addEventListener('click', () => {
         <table>
           <thead>
             <tr>
-              <th style="width:12%">رقم المؤشر</th>
-              <th style="width:38%">اسم المؤشر</th>
-              <th style="width:18%">المجال</th>
-              <th style="width:18%">المعيار</th>
+              <th style="width:12%">رقم المؤشر</th><th style="width:38%">اسم المؤشر</th>
+              <th style="width:18%">المجال</th><th style="width:18%">المعيار</th>
               <th style="width:14%">الحالة الحالية</th>
             </tr>
           </thead>
@@ -800,10 +615,8 @@ document.getElementById('exportBtn').addEventListener('click', () => {
         <table>
           <thead>
             <tr>
-              <th style="width:11%">المجال</th>
-              <th style="width:11%">المعيار</th>
-              <th style="width:8%">إجراءات منفذة</th>
-              <th style="width:8%">إجراءات متبقية</th>
+              <th style="width:11%">المجال</th><th style="width:11%">المعيار</th>
+              <th style="width:8%">إجراءات منفذة</th><th style="width:8%">إجراءات متبقية</th>
               <th style="width:12%">جهة التنفيذ</th>
               <th style="width:25%">تفاصيل ما تم تنفيذه</th>
               <th style="width:25%">تفاصيل النقص والمتبقي</th>
@@ -813,31 +626,29 @@ document.getElementById('exportBtn').addEventListener('click', () => {
         </table>
 
         <h3 class="section-title">رابعاً: التفاصيل التشغيلية الكاملة للمؤشرات</h3>
-        ${items.length ? `
-          <table>
-            <thead>
-              <tr>
-                <th class="col-indicator">المؤشر</th>
-                <th class="col-evidence">الشواهد المتوقعة</th>
-                <th class="col-docs">الوثائق</th>
-                <th class="col-status">نسبة الإنجاز</th>
-                <th class="col-status">حالة الإنجاز</th>
-                <th class="col-avail">توفر الأدلة</th>
-                <th class="col-eval">التقييم الذاتي</th>
-                <th class="col-notes">ملاحظات</th>
-              </tr>
-            </thead>
-            <tbody>${rowsHtml}</tbody>
-          </table>
-        ` : '<div style="text-align:center;padding:44px;font-size:16px;">لا توجد مؤشرات مطابقة للفلاتر الحالية.</div>'}
+        <table>
+          <thead>
+            <tr>
+              <th class="col-indicator">المؤشر</th>
+              <th class="col-evidence">الشواهد المتوقعة</th>
+              <th class="col-docs">الوثائق</th>
+              <th class="col-status">نسبة الإنجاز</th>
+              <th class="col-status">حالة الإنجاز</th>
+              <th class="col-avail">توفر الأدلة</th>
+              <th class="col-eval">التقييم الذاتي</th>
+              <th class="col-notes">ملاحظات</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
 
         <section class="signatures">
           <div class="sig-item">
-            <div class="sig-title">قائدة/ة المدرسة</div>
+            <div class="sig-title">قائد/ة المدرسة</div>
             <div class="sig-line"></div>
           </div>
           <div class="sig-item">
-            <div class="sig-title">مشرفة/ة الجودة</div>
+            <div class="sig-title">مشرف/ة الجودة</div>
             <div class="sig-line"></div>
           </div>
         </section>
@@ -847,14 +658,12 @@ document.getElementById('exportBtn').addEventListener('click', () => {
           <span>Page 1 of 1</span>
         </div>
       </main>
-
-      <script>
-        setTimeout(() => { window.print(); }, 800);
-      </script>
+      <script>setTimeout(() => { window.print(); }, 800);</script>
     </body>
     </html>
   `);
   popup.document.close();
 });
 
+// ─── تشغيل ───────────────────────────────────────
 render();

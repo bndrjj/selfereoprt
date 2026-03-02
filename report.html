@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>استمارة التحقق | تقرير الاعتماد</title>
+    <title>قائمة التحقق | تقرير الاعتماد المدرسي</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -40,40 +40,19 @@
             <button class="edit-btn noprint" id="editSchool" type="button" title="تعديل اسم المدرسة">✎</button>
           </p>
         </section>
-
       </header>
 
       <section class="toolbar noprint">
-        <label class="sel"><select id="domainFilter"></select><span>▾</span></label>
-        <label class="sel"><select id="standardFilter"></select><span>▾</span></label>
+        <span class="toolbar-title">قائمة التحقق الشاملة — جميع المجالات والمعايير والمؤشرات</span>
         <button class="btn" id="saveBtn">💾 حفظ</button>
-        <button class="btn" id="exportBtn">📤 تقرير التصدير</button>
+        <button class="btn" id="exportBtn">📤 تقرير PDF</button>
         <button class="btn secondary" id="printBtn">🖨️ طباعة</button>
-        <button class="btn warn" id="clearBtn">🧹 مسح</button>
+        <button class="btn warn" id="clearBtn">🧹 مسح الكل</button>
       </section>
 
-      <section class="summary" id="summary"></section>
+      <section class="summary-bar" id="summary"></section>
 
-      <section class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>المجال</th>
-              <th>المعيار</th>
-              <th>رقم ونص المؤشر</th>
-              <th>الشواهد المتوقعة</th>
-              <th>الوثائق</th>
-              <th>نسبة الإنجاز %</th>
-              <th>حالة الإنجاز (تلقائي)</th>
-              <th>توفر الشواهد والوثائق</th>
-              <th>التقييم الذاتي (تلقائي)</th>
-              <th>المسؤول عن التنفيذ</th>
-              <th>ملاحظات التحسين</th>
-            </tr>
-          </thead>
-          <tbody id="rows"></tbody>
-        </table>
-      </section>
+      <section id="checklist-container"></section>
     </main>
 
     <script src="report.js"></script>
