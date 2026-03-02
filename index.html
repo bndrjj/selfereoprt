@@ -22,11 +22,6 @@
           لمستوى التحقق، ولوحة مؤشرات مساعدة لاتخاذ القرار.
         </p>
       </div>
-      <div class="hero-actions">
-        <button class="hero-link-btn" id="openSchoolInfoBtn" type="button">&#9881; بيانات المدرسة والفريق</button>
-        <a class="hero-link-btn" href="report.html">فتح التقرير المستقل</a>
-        <a class="hero-link-btn" href="progress-report.html">تقرير التقدم والإنجاز (PDF)</a>
-      </div>
     </header>
 
     <main class="layout">
@@ -190,7 +185,8 @@
         setTimeout(closeModal, 1500);
       }
 
-      openBtn.addEventListener("click", openModal);
+      if (openBtn) openBtn.addEventListener("click", openModal);
+      window.openSchoolInfoModal = openModal;
       closeBtn.addEventListener("click", closeModal);
       cancelBtn.addEventListener("click", closeModal);
       saveBtn.addEventListener("click", saveData);

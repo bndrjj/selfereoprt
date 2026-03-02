@@ -1382,19 +1382,64 @@ function downloadBackupFile() {
 
 function renderBackupPanel() {
   backupPanelEl.innerHTML = `
-    <h2>حفظ ومشاركة التقدم</h2>
-    <p class="backup-note">احفظ نسخة احتياطية كاملة من جميع المؤشرات ثم استعدها لاحقًا على أي جهاز أو مع أي عضو في الفريق.</p>
-    <div class="backup-actions">
-      <button class="backup-btn" data-backup="download">نسخة احتياطية</button>
-      <label class="backup-btn backup-btn-outline" for="backup-file-input">استعادة نسخة من ملف</label>
-      <button class="backup-btn backup-btn-outline" data-backup="report">تقرير الإنجاز (A4 / PDF)</button>
-      <button class="backup-btn backup-btn-danger" data-backup="clear">🗑 مسح البيانات بالكامل</button>
-      <input id="backup-file-input" type="file" accept="application/json" hidden />
+    <div class="backup-header">
+      <h2>حفظ ومشاركة التقدم</h2>
+      <p class="backup-note">جميع أدوات المنصة في مكان واحد — تنقل بين الصفحات، أنشئ التقارير، واحفظ بياناتك بأمان مع فريقك.</p>
     </div>
+
+    <div class="backup-groups">
+      <div class="backup-group">
+        <p class="backup-group-title">التنقل والتقارير</p>
+        <div class="backup-actions">
+          <button class="backup-btn backup-btn-nav" data-backup="school-info">
+            <span class="btn-icon">⚙️</span>
+            <span>بيانات المدرسة والفريق</span>
+          </button>
+          <a class="backup-btn backup-btn-nav" href="report.html">
+            <span class="btn-icon">📋</span>
+            <span>التقرير المستقل</span>
+          </a>
+          <a class="backup-btn backup-btn-nav" href="progress-report.html">
+            <span class="btn-icon">📊</span>
+            <span>تقرير التقدم والإنجاز (PDF)</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="backup-group">
+        <p class="backup-group-title">حفظ البيانات واستعادتها</p>
+        <div class="backup-actions">
+          <button class="backup-btn backup-btn-primary" data-backup="download">
+            <span class="btn-icon">💾</span>
+            <span>نسخة احتياطية</span>
+          </button>
+          <label class="backup-btn backup-btn-outline" for="backup-file-input">
+            <span class="btn-icon">📁</span>
+            <span>استعادة نسخة من ملف</span>
+          </label>
+          <button class="backup-btn backup-btn-outline" data-backup="report">
+            <span class="btn-icon">🖨️</span>
+            <span>تقرير الإنجاز الفوري (A4)</span>
+          </button>
+          <button class="backup-btn backup-btn-danger" data-backup="clear">
+            <span class="btn-icon">🗑</span>
+            <span>مسح البيانات بالكامل</span>
+          </button>
+          <input id="backup-file-input" type="file" accept="application/json" hidden />
+        </div>
+      </div>
+    </div>
+
     <p id="backup-status" class="backup-status" aria-live="polite"></p>
   `;
 
   const statusEl = backupPanelEl.querySelector("#backup-status");
+
+  backupPanelEl.querySelector('[data-backup="school-info"]')?.addEventListener("click", () => {
+    if (typeof window.openSchoolInfoModal === "function") {
+      window.openSchoolInfoModal();
+    }
+  });
 
   backupPanelEl.querySelector('[data-backup="download"]')?.addEventListener("click", () => {
     downloadBackupFile();
