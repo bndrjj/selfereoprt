@@ -793,6 +793,17 @@ select {
   background: #f2f6f6;
 }
 
+.backup-btn-danger {
+  background: #fff;
+  border: 1.5px solid #d9534f;
+  color: #c0392b;
+}
+
+.backup-btn-danger:hover {
+  background: #fdf2f2;
+  border-color: #c0392b;
+}
+
 .backup-status {
   margin: 0.8rem 0 0;
   font-weight: 600;
@@ -912,3 +923,93 @@ select {
   color: #15803d;
   min-height: 20px;
 }
+
+/* ===== نافذة تأكيد مسح البيانات ===== */
+.cd-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+.cd-overlay.cd-active { display: flex; }
+
+.cd-box {
+  background: #fff;
+  border-radius: 18px;
+  width: 92%;
+  max-width: 500px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+  direction: rtl;
+  text-align: center;
+  padding: 2rem 1.8rem 1.5rem;
+  animation: cd-pop 0.22s ease;
+}
+
+@keyframes cd-pop {
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+.cd-icon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  line-height: 1;
+}
+
+.cd-title {
+  font-family: "Cairo", "Tajawal", sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #b91c1c;
+  margin: 0 0 0.9rem;
+}
+
+.cd-message {
+  font-size: 0.95rem;
+  color: #444;
+  line-height: 1.8;
+  margin: 0 0 1.5rem;
+}
+
+.cd-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.cd-btn {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  font-family: "Cairo", "Tajawal", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: all 0.2s;
+}
+
+.cd-btn-confirm {
+  background: linear-gradient(135deg, #b91c1c, #dc2626);
+  color: #fff;
+  border-color: #b91c1c;
+}
+.cd-btn-confirm:hover { background: linear-gradient(135deg, #991b1b, #b91c1c); }
+
+.cd-btn-cancel {
+  background: #f7faf9;
+  color: #3d5a58;
+  border-color: #c8dcd9;
+}
+.cd-btn-cancel:hover { background: #e8eeed; }
+
+.cd-btn-backup {
+  background: linear-gradient(135deg, #094d45, #0c6b60);
+  color: #fff;
+  border-color: #094d45;
+}
+.cd-btn-backup:hover { background: linear-gradient(135deg, #0c6b60, #1a8f82); }

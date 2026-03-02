@@ -1388,6 +1388,7 @@ function renderBackupPanel() {
       <button class="backup-btn" data-backup="download">نسخة احتياطية</button>
       <label class="backup-btn backup-btn-outline" for="backup-file-input">استعادة نسخة من ملف</label>
       <button class="backup-btn backup-btn-outline" data-backup="report">تقرير الإنجاز (A4 / PDF)</button>
+      <button class="backup-btn backup-btn-danger" data-backup="clear">🗑 مسح البيانات بالكامل</button>
       <input id="backup-file-input" type="file" accept="application/json" hidden />
     </div>
     <p id="backup-status" class="backup-status" aria-live="polite"></p>
@@ -1424,6 +1425,29 @@ function renderBackupPanel() {
       statusEl.textContent = "⚠️ تعذر فتح نافذة جديدة؛ تم فتح التقرير في نفس الصفحة.";
     }
   });
+
+  backupPanelEl.querySelector('[data-backup="clear"]')?.addEventListener("click", () => {
+    openClearDataModal();
+  });
+}
+
+function clearAllData() {
+  localStorage.removeItem(storageKey);
+  localStorage.removeItem("school-quality-tracker");
+  localStorage.removeItem("accreditation-checklist-v3");
+  state.checks = {};
+  closeClearDataModal();
+  render();
+}
+
+function openClearDataModal() {
+  const overlay = document.getElementById("cdOverlay");
+  if (overlay) overlay.classList.add("cd-active");
+}
+
+function closeClearDataModal() {
+  const overlay = document.getElementById("cdOverlay");
+  if (overlay) overlay.classList.remove("cd-active");
 }
 
 function flattenIndicators() {

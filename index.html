@@ -114,6 +114,24 @@
       </div>
     </div>
 
+    <!-- ===== نافذة تحذير مسح البيانات ===== -->
+    <div class="cd-overlay" id="cdOverlay" role="dialog" aria-modal="true" aria-labelledby="cdTitle">
+      <div class="cd-box">
+        <div class="cd-icon" aria-hidden="true">⚠️</div>
+        <h3 class="cd-title" id="cdTitle">تحذير: مسح جميع البيانات</h3>
+        <p class="cd-message">
+          الموافقة على هذا الإجراء ستؤدي إلى <strong>حذف جميع بيانات المؤشرات والإدخالات</strong> بشكل نهائي ولا يمكن التراجع عنه.
+          <br /><br />
+          يُنصح بشدة <strong>أخذ نسخة احتياطية</strong> قبل المتابعة للحفاظ على بياناتك.
+        </p>
+        <div class="cd-footer">
+          <button class="cd-btn cd-btn-backup" id="cdBackupBtn" type="button">💾 أخذ نسخة احتياطية</button>
+          <button class="cd-btn cd-btn-cancel" id="cdCancelBtn" type="button">لا، إلغاء الأمر</button>
+          <button class="cd-btn cd-btn-confirm" id="cdConfirmBtn" type="button">نعم، متأكد من حذف البيانات</button>
+        </div>
+      </div>
+    </div>
+
     <script src="app.js"></script>
     <script>
     // ─── نافذة بيانات المدرسة ─────────────────────────────────
@@ -178,6 +196,34 @@
       saveBtn.addEventListener("click", saveData);
       overlay.addEventListener("click", function(e) { if (e.target === overlay) closeModal(); });
       document.addEventListener("keydown", function(e) { if (e.key === "Escape" && overlay.classList.contains("si-active")) closeModal(); });
+    })();
+
+    // ─── نافذة تأكيد مسح البيانات ─────────────────────────────────
+    (function() {
+      var cdOverlay = document.getElementById("cdOverlay");
+      var cdCancelBtn = document.getElementById("cdCancelBtn");
+      var cdConfirmBtn = document.getElementById("cdConfirmBtn");
+      var cdBackupBtn = document.getElementById("cdBackupBtn");
+
+      cdCancelBtn.addEventListener("click", function() {
+        closeClearDataModal();
+      });
+
+      cdConfirmBtn.addEventListener("click", function() {
+        clearAllData();
+      });
+
+      cdBackupBtn.addEventListener("click", function() {
+        downloadBackupFile();
+      });
+
+      cdOverlay.addEventListener("click", function(e) {
+        if (e.target === cdOverlay) closeClearDataModal();
+      });
+
+      document.addEventListener("keydown", function(e) {
+        if (e.key === "Escape" && cdOverlay.classList.contains("cd-active")) closeClearDataModal();
+      });
     })();
     </script>
   </body>
