@@ -27,49 +27,48 @@
     <main class="layout">
       <section class="card dashboard" id="dashboard"></section>
       <section class="card backup-panel" id="backup-panel"></section>
+
+      <section class="card eval-rules-card">
+        <div class="eval-rules-bar">
+          <div class="eval-rules-title">
+            <h3>قواعد التقييم حسب عدد الأدلة</h3>
+          </div>
+          <div class="eval-rules-levels">
+            <div class="eval-level eval-level--low">
+              <span class="eval-dot low"></span>
+              <div class="eval-level-info">
+                <strong>منخفضة</strong>
+                <span>دليلان أو أقل</span>
+              </div>
+            </div>
+            <div class="eval-level eval-level--med">
+              <span class="eval-dot med"></span>
+              <div class="eval-level-info">
+                <strong>متوسطة</strong>
+                <span>3 إلى 4 أدلة</span>
+              </div>
+            </div>
+            <div class="eval-level eval-level--high">
+              <span class="eval-dot high"></span>
+              <div class="eval-level-info">
+                <strong>مرتفعة</strong>
+                <span>5 أدلة</span>
+              </div>
+            </div>
+            <div class="eval-level eval-level--vhigh">
+              <span class="eval-dot vhigh"></span>
+              <div class="eval-level-info">
+                <strong>مرتفعة جداً</strong>
+                <span>6 أدلة فأكثر</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section class="card breadcrumbs" id="breadcrumbs"></section>
       <section class="card" id="list-view"></section>
       <section class="card" id="detail-view" hidden></section>
-
-      <section class="card info-grid">
-        <article class="evaluation-rules" aria-label="قواعد التقييم حسب عدد الأدلة">
-          <header class="evaluation-rules-head">
-            <h2>قواعد التقييم حسب عدد الأدلة المتوفرة</h2>
-            <p>إطار موحد لقياس مستوى تحقق المؤشر وفق عدد الشواهد والوثائق.</p>
-          </header>
-
-          <ul class="levels levels-enhanced">
-            <li class="level-item">
-              <span class="level-badge">
-                <span class="dot low"></span>
-                <strong>منخفضة</strong>
-              </span>
-              <span class="level-text">متحقق بدرجة منخفضة — إذا توفر دليلان أو أقل.</span>
-            </li>
-            <li class="level-item">
-              <span class="level-badge">
-                <span class="dot med"></span>
-                <strong>متوسطة</strong>
-              </span>
-              <span class="level-text">متحقق بدرجة متوسطة — إذا توفر من 3 إلى 4 أدلة.</span>
-            </li>
-            <li class="level-item">
-              <span class="level-badge">
-                <span class="dot high"></span>
-                <strong>مرتفعة</strong>
-              </span>
-              <span class="level-text">متحقق بدرجة مرتفعة — إذا توفر 5 أدلة.</span>
-            </li>
-            <li class="level-item">
-              <span class="level-badge">
-                <span class="dot vhigh"></span>
-                <strong>مرتفعة جداً</strong>
-              </span>
-              <span class="level-text">متحقق بدرجة مرتفعة جداً — إذا توفر 6 أدلة فأكثر.</span>
-            </li>
-          </ul>
-        </article>
-      </section>
     </main>
 
     <!-- ===== نافذة بيانات المدرسة والفريق ===== -->
