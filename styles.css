@@ -617,86 +617,112 @@ select {
   accent-color: var(--primary);
 }
 
-.info-grid {
-  display: grid;
-  gap: 0.8rem;
-  grid-template-columns: minmax(280px, 1fr);
-}
-
-.evaluation-rules {
-  background: linear-gradient(165deg, #fbfcfa 0%, #f3f6f2 100%);
+/* ===== قسم قواعد التقييم (شريط أفقي) ===== */
+.eval-rules-card {
+  padding: 0 !important;
+  overflow: hidden;
   border: 1px solid #d3ddd4;
-  border-radius: 16px;
-  padding: 1.1rem;
+  background: linear-gradient(135deg, #f8faf7 0%, #eef3ee 100%);
 }
 
-.evaluation-rules-head h2 {
-  margin: 0;
-  color: #24484d;
-}
-
-.evaluation-rules-head p {
-  margin: 0.45rem 0 0;
-  color: var(--muted);
-}
-
-.levels-enhanced {
-  list-style: none;
-  margin: 1rem 0 0;
-  padding: 0;
-  display: grid;
-  gap: 0.7rem;
-}
-
-.level-item {
-  border: 1px solid #d8dfd8;
-  border-radius: 14px;
-  background: #ffffff;
-  padding: 0.7rem 0.85rem;
+.eval-rules-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.85rem;
-  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.85rem 1.2rem;
 }
 
-.level-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  border-radius: 999px;
-  background: #eef3ef;
+.eval-rules-title h3 {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
   color: #24484d;
-  padding: 0.25rem 0.7rem;
-  min-width: 115px;
+  white-space: nowrap;
 }
 
-.level-text {
-  color: #2c4f53;
-  line-height: 1.55;
+.eval-rules-levels {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  justify-content: center;
 }
 
-.dot {
+.eval-level {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #dce4dc;
+  transition: transform 0.2s, box-shadow 0.2s;
+  flex: 1;
+  max-width: 220px;
+}
+
+.eval-level:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+}
+
+.eval-level--low { border-right: 3px solid #a89f8d; }
+.eval-level--med { border-right: 3px solid #8faebe; }
+.eval-level--high { border-right: 3px solid #6e9e81; }
+.eval-level--vhigh { border-right: 3px solid #2c7880; }
+
+.eval-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
   display: inline-block;
+  flex-shrink: 0;
 }
 
-.low {
-  background: #a89f8d;
+.eval-level-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
 }
 
-.med {
-  background: #8faebe;
+.eval-level-info strong {
+  font-size: 0.8rem;
+  color: #24484d;
+  line-height: 1.3;
 }
 
-.high {
-  background: #6e9e81;
+.eval-level-info span {
+  font-size: 0.7rem;
+  color: #5a7a6e;
+  line-height: 1.3;
 }
 
-.vhigh {
-  background: #2c7880;
+.low { background: #a89f8d; }
+.med { background: #8faebe; }
+.high { background: #6e9e81; }
+.vhigh { background: #2c7880; }
+
+@media (max-width: 900px) {
+  .eval-rules-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+  }
+  .eval-rules-levels {
+    flex-wrap: wrap;
+    justify-content: stretch;
+  }
+  .eval-level {
+    flex: 1 1 calc(50% - 0.5rem);
+    max-width: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .eval-level {
+    flex: 1 1 100%;
+  }
 }
 
 @media (max-width: 700px) {
