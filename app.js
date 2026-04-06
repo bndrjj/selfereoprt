@@ -1491,12 +1491,52 @@ async function fetchDriveChildren(folderId, apiKey) {
   return data.files || [];
 }
 
+async function fetchDriveItem(itemId, apiKey) {
+  const params = new URLSearchParams({
+    fields: "id,name,mimeType,webViewLink",
+    supportsAllDrives: "true",
+    includeItemsFromAllDrives: "true",
+    key: apiKey
+  });
+  const response = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(itemId)}?${params.toString()}`);
+  const data = await response.json();
+  if (!response.ok) {
+    const details = data?.error?.message || "تعذر قراءة بيانات المجلد المحدد من Google Drive.";
+    throw new Error(details);
+  }
+  return data;
+}
+
+function normalizeDigits(value) {
+  return String(value || "").replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)));
+}
+
+function normalizeDriveName(value) {
+  return normalizeDigits(value)
+    .replace(/[‐‑‒–—−]/g, "-")
+    .replace(/\s*-\s*/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractLeadingCode(value) {
+  const normalized = normalizeDriveName(value);
+  const match = normalized.match(/^(\d+(?:-\d+){0,3})\b/);
+  return match?.[1] || "";
+}
+
 function findChildFolder(children, expectedId, expectedName) {
-  const normalizedName = (expectedName || "").trim();
+  const normalizedExpectedName = normalizeDriveName(expectedName);
+  const normalizedExpectedId = normalizeDriveName(expectedId);
   return children.find((item) => {
     if (item.mimeType !== "application/vnd.google-apps.folder") return false;
-    const name = (item.name || "").trim();
-    return name === normalizedName || name.startsWith(`${expectedId} `) || name.startsWith(`${expectedId}-`) || name === expectedId;
+    const normalizedName = normalizeDriveName(item.name);
+    const leadingCode = extractLeadingCode(item.name);
+    return (
+      normalizedName === normalizedExpectedName ||
+      normalizedName === normalizedExpectedId ||
+      leadingCode === normalizedExpectedId
+    );
   });
 }
 
@@ -1521,12 +1561,12 @@ function evaluateIndicatorFiles(indicator, files) {
 
   for (const file of files) {
     const rawName = (file.name || "").trim();
-    const lowerName = rawName.toLowerCase();
+    const lowerName = normalizeDigits(rawName).toLowerCase();
     if (!lowerName.endsWith(".pdf")) {
       invalidExt.push(rawName);
       continue;
     }
-    const base = rawName.slice(0, -4);
+    const base = lowerName.slice(0, -4).replace(/\s*-\s*/g, "-");
     const match = base.match(/^(\d-\d-\d-\d)-(a|b)-(\d+)$/i);
     if (!match) {
       invalidFormat.push(rawName);
@@ -1583,9 +1623,11 @@ async function runDriveAudit(rootFolderId, apiKey) {
   };
 
   const domainReports = [];
+  const rootFolder = await fetchDriveItem(rootFolderId, apiKey);
+  const rootChildren = await fetchDriveChildren(rootFolderId, apiKey);
   for (const domain of domains) {
-    const domainChildren = await fetchDriveChildren(rootFolderId, apiKey);
-    const domainFolder = findChildFolder(domainChildren, String(domain.id), domain.name);
+    const domainFolder = findChildFolder([rootFolder], String(domain.id), domain.name)
+      || findChildFolder(rootChildren, String(domain.id), domain.name);
 
     for (const standard of domain.standards) {
       for (const indicator of standard.indicators) {
