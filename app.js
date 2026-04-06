@@ -1428,11 +1428,14 @@ const domains = [
 
 const storageKey = "school-quality-tracker";
 const persisted = JSON.parse(localStorage.getItem(storageKey) || "{}");
+const driveLinkStorageKey = "school-quality-drive-link";
 const state = {
   domain: null,
   standard: null,
   selectedIndicator: null,
-  checks: persisted.checks || {}
+  checks: persisted.checks || {},
+  driveLink: localStorage.getItem(driveLinkStorageKey) || "",
+  driveAudit: null
 };
 
 const dashboardEl = document.getElementById("dashboard");
@@ -1443,6 +1446,263 @@ const detailViewEl = document.getElementById("detail-view");
 
 function save() {
   localStorage.setItem(storageKey, JSON.stringify({ checks: state.checks }));
+}
+
+function saveDriveLink(link) {
+  state.driveLink = link;
+  localStorage.setItem(driveLinkStorageKey, link);
+}
+
+function extractGoogleDriveFolderId(value) {
+  if (!value) return "";
+  const trimmed = value.trim();
+  const byPath = trimmed.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  if (byPath?.[1]) return byPath[1];
+  const byParam = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (byParam?.[1]) return byParam[1];
+  if (/^[a-zA-Z0-9_-]{10,}$/.test(trimmed)) return trimmed;
+  return "";
+}
+
+function safeHtml(text) {
+  return String(text || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+async function fetchDriveChildren(folderId, apiKey) {
+  const params = new URLSearchParams({
+    q: `'${folderId}' in parents and trashed=false`,
+    pageSize: "1000",
+    fields: "files(id,name,mimeType,webViewLink)",
+    supportsAllDrives: "true",
+    includeItemsFromAllDrives: "true",
+    key: apiKey
+  });
+  const response = await fetch(`https://www.googleapis.com/drive/v3/files?${params.toString()}`);
+  const data = await response.json();
+  if (!response.ok) {
+    const details = data?.error?.message || "تعذر جلب محتويات المجلد من Google Drive.";
+    throw new Error(details);
+  }
+  return data.files || [];
+}
+
+function findChildFolder(children, expectedId, expectedName) {
+  const normalizedName = (expectedName || "").trim();
+  return children.find((item) => {
+    if (item.mimeType !== "application/vnd.google-apps.folder") return false;
+    const name = (item.name || "").trim();
+    return name === normalizedName || name.startsWith(`${expectedId} `) || name.startsWith(`${expectedId}-`) || name === expectedId;
+  });
+}
+
+function expectedFilesForIndicator(indicator) {
+  const expected = [];
+  for (let i = 1; i <= indicator.evidenceGuide.length; i += 1) {
+    expected.push({ code: `${indicator.id}-a-${i}`, bucket: "procedures" });
+  }
+  for (let i = 1; i <= indicator.documentsGuide.length; i += 1) {
+    expected.push({ code: `${indicator.id}-b-${i}`, bucket: "tools" });
+  }
+  return expected;
+}
+
+function evaluateIndicatorFiles(indicator, files) {
+  const expected = expectedFilesForIndicator(indicator);
+  const normalizedMap = new Map();
+  const duplicates = [];
+  const invalidFormat = [];
+  const invalidExt = [];
+  const invalidPrefix = [];
+
+  for (const file of files) {
+    const rawName = (file.name || "").trim();
+    const lowerName = rawName.toLowerCase();
+    if (!lowerName.endsWith(".pdf")) {
+      invalidExt.push(rawName);
+      continue;
+    }
+    const base = rawName.slice(0, -4);
+    const match = base.match(/^(\d-\d-\d-\d)-(a|b)-(\d+)$/i);
+    if (!match) {
+      invalidFormat.push(rawName);
+      continue;
+    }
+    const prefix = match[1];
+    const suffix = match[2].toLowerCase();
+    const index = Number(match[3]);
+    if (prefix !== indicator.id) {
+      invalidPrefix.push(rawName);
+      continue;
+    }
+    const code = `${indicator.id}-${suffix}-${index}`;
+    if (normalizedMap.has(code)) {
+      duplicates.push(rawName);
+      continue;
+    }
+    normalizedMap.set(code, file);
+  }
+
+  const missing = [];
+  const present = [];
+  expected.forEach((item) => {
+    if (normalizedMap.has(item.code)) present.push(item.code);
+    else missing.push(item.code);
+  });
+
+  const unexpected = [];
+  for (const [code, file] of normalizedMap.entries()) {
+    if (!expected.some((item) => item.code === code)) unexpected.push(file.name);
+  }
+
+  return {
+    expectedTotal: expected.length,
+    foundTotal: present.length,
+    completion: expected.length ? Math.round((present.length / expected.length) * 100) : 100,
+    missing,
+    duplicates,
+    invalidFormat,
+    invalidExt,
+    invalidPrefix,
+    unexpected
+  };
+}
+
+async function runDriveAudit(rootFolderId, apiKey) {
+  const startedAt = new Date().toISOString();
+  const result = {
+    startedAt,
+    completedAt: null,
+    rootFolderId,
+    summary: { indicators: 0, complete: 0, partial: 0, missing: 0 },
+    rows: []
+  };
+
+  const domainReports = [];
+  for (const domain of domains) {
+    const domainChildren = await fetchDriveChildren(rootFolderId, apiKey);
+    const domainFolder = findChildFolder(domainChildren, String(domain.id), domain.name);
+
+    for (const standard of domain.standards) {
+      for (const indicator of standard.indicators) {
+        result.summary.indicators += 1;
+        const row = {
+          domainName: domain.name,
+          standardName: standard.name,
+          indicatorId: indicator.id,
+          indicatorTitle: indicator.title,
+          status: "missing",
+          details: null
+        };
+
+        if (!domainFolder) {
+          row.details = { reason: "لم يتم العثور على مجلد المجال." };
+          result.summary.missing += 1;
+          result.rows.push(row);
+          continue;
+        }
+
+        let standardFolder = domainReports.find((item) => item.domainId === domain.id && item.standardId === standard.id)?.folder || null;
+        if (!standardFolder) {
+          const standardChildren = await fetchDriveChildren(domainFolder.id, apiKey);
+          standardFolder = findChildFolder(standardChildren, standard.id, standard.name);
+          domainReports.push({ domainId: domain.id, standardId: standard.id, folder: standardFolder });
+        }
+
+        if (!standardFolder) {
+          row.details = { reason: "لم يتم العثور على مجلد المعيار داخل المجال." };
+          result.summary.missing += 1;
+          result.rows.push(row);
+          continue;
+        }
+
+        const indicatorChildren = await fetchDriveChildren(standardFolder.id, apiKey);
+        const indicatorFolder = findChildFolder(indicatorChildren, indicator.id, indicator.title);
+        if (!indicatorFolder) {
+          row.details = { reason: "لم يتم العثور على مجلد المؤشر داخل المعيار." };
+          result.summary.missing += 1;
+          result.rows.push(row);
+          continue;
+        }
+
+        const indicatorFiles = (await fetchDriveChildren(indicatorFolder.id, apiKey)).filter(
+          (item) => item.mimeType !== "application/vnd.google-apps.folder"
+        );
+        const evaluation = evaluateIndicatorFiles(indicator, indicatorFiles);
+        row.details = evaluation;
+        if (evaluation.completion === 100) {
+          row.status = "complete";
+          result.summary.complete += 1;
+        } else if (evaluation.foundTotal > 0) {
+          row.status = "partial";
+          result.summary.partial += 1;
+        } else {
+          row.status = "missing";
+          result.summary.missing += 1;
+        }
+        result.rows.push(row);
+      }
+    }
+  }
+
+  result.completedAt = new Date().toISOString();
+  return result;
+}
+
+function buildDriveAuditHtml(audit) {
+  if (!audit) return "";
+  const percentage = audit.summary.indicators
+    ? Math.round(((audit.summary.complete + audit.summary.partial) / audit.summary.indicators) * 100)
+    : 0;
+
+  const rows = audit.rows
+    .map((row) => {
+      const details = row.details || {};
+      const missing = (details.missing || []).slice(0, 4);
+      const statusLabel = row.status === "complete" ? "مكتمل" : row.status === "partial" ? "غير مكتمل" : "مفقود";
+      const statusCls = row.status === "complete" ? "drive-status-ok" : row.status === "partial" ? "drive-status-warn" : "drive-status-miss";
+      const notes = [];
+      if (details.reason) notes.push(details.reason);
+      if (missing.length) notes.push(`أسماء ناقصة: ${missing.join("، ")}`);
+      if (details.invalidFormat?.length) notes.push(`تنسيق اسم خاطئ: ${details.invalidFormat.length}`);
+      if (details.invalidExt?.length) notes.push(`ملفات ليست PDF: ${details.invalidExt.length}`);
+      return `<tr>
+        <td>${safeHtml(row.indicatorId)}</td>
+        <td>${safeHtml(row.domainName)} / ${safeHtml(row.standardName)}</td>
+        <td><span class="drive-status ${statusCls}">${statusLabel}</span></td>
+        <td>${details.foundTotal ?? 0}/${details.expectedTotal ?? 0}</td>
+        <td>${safeHtml(notes.join(" | ") || "—")}</td>
+      </tr>`;
+    })
+    .join("");
+
+  return `
+    <div class="drive-summary">
+      <span>إجمالي المؤشرات: <strong>${audit.summary.indicators}</strong></span>
+      <span>مكتمل: <strong>${audit.summary.complete}</strong></span>
+      <span>جزئي: <strong>${audit.summary.partial}</strong></span>
+      <span>مفقود: <strong>${audit.summary.missing}</strong></span>
+      <span>تغطية الفحص: <strong>${percentage}%</strong></span>
+    </div>
+    <div class="drive-table-wrap">
+      <table class="drive-table">
+        <thead>
+          <tr>
+            <th>المؤشر</th>
+            <th>المجال / المعيار</th>
+            <th>الحالة</th>
+            <th>الملفات</th>
+            <th>ملاحظات</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
 }
 
 function createBackupPayload() {
@@ -1542,6 +1802,69 @@ function renderBackupPanel() {
           <input id="backup-file-input" type="file" accept="application/json" hidden />
         </div>
       </div>
+
+      <div class="backup-group backup-group-drive">
+        <p class="backup-group-title"><span class="group-title-icon">☁️</span> فحص ملفات Google Drive</p>
+        <p class="backup-note drive-note">
+          اربط رابط مجلد Google Drive العام، ثم أدخل مفتاح Google API لفحص وجود ملفات PDF لكل مؤشر بحسب الصيغة:
+          <code>1-1-1-1-a-1.pdf</code> أو <code>1-1-1-1-b-1.pdf</code>.
+        </p>
+        <div class="drive-form">
+          <label class="drive-label" for="drive-folder-link">رابط المجلد أو معرفه</label>
+          <input id="drive-folder-link" class="drive-input" type="text" placeholder="https://drive.google.com/drive/folders/..." value="${safeHtml(state.driveLink)}" />
+        </div>
+        <div class="drive-form">
+          <label class="drive-label" for="drive-api-key">Google API Key</label>
+          <input id="drive-api-key" class="drive-input" type="password" placeholder="AIza..." />
+        </div>
+        <div class="backup-actions backup-actions-drive-help">
+          <button class="backup-btn backup-btn-outline" data-drive="help">
+            <span class="btn-icon">🧭</span><span>المساعدة للحصول على المفتاح API</span>
+          </button>
+        </div>
+        <div class="backup-actions backup-actions-drive">
+          <button class="backup-btn backup-btn-primary" data-drive="scan">
+            <span class="btn-icon">🔍</span><span>بدء الفحص</span>
+          </button>
+        </div>
+        <div id="drive-audit-results">${buildDriveAuditHtml(state.driveAudit)}</div>
+      </div>
+    </div>
+
+    <div class="drive-help-overlay" id="drive-help-overlay" role="dialog" aria-modal="true" aria-labelledby="driveHelpTitle">
+      <div class="drive-help-box">
+        <button class="drive-help-close" type="button" data-drive="close-help" aria-label="إغلاق">×</button>
+        <h3 class="drive-help-title" id="driveHelpTitle">المساعدة للحصول على Google API Key</h3>
+        <p class="drive-help-intro">
+          اتبع هذه الخطوات المختصرة لتمكين الفحص من قراءة محتويات Google Drive.
+        </p>
+        <ol class="drive-help-steps">
+          <li>
+            ادخل إلى
+            <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer">Google Cloud Console</a>
+            وسجّل الدخول بحساب Google.
+          </li>
+          <li>أنشئ مشروعًا جديدًا من أعلى الصفحة (أو استخدم مشروعًا موجودًا).</li>
+          <li>
+            من قائمة <strong>APIs & Services</strong> اختر <strong>Library</strong> ثم ابحث عن
+            <strong>Google Drive API</strong> واضغط <strong>Enable</strong>.
+          </li>
+          <li>
+            انتقل إلى <strong>Credentials</strong> ثم اضغط <strong>Create Credentials</strong> واختر
+            <strong>API key</strong>.
+          </li>
+          <li>انسخ المفتاح الذي يبدأ غالبًا بـ <code>AIza...</code>.</li>
+          <li>
+            (اختياري موصى به) اضبط قيود المفتاح:
+            <ul>
+              <li>Application restrictions (HTTP referrers لموقعك).</li>
+              <li>API restrictions واختر Google Drive API فقط.</li>
+            </ul>
+          </li>
+          <li>تأكد أن مجلد Google Drive المطلوب فحصه مشارك كـ <strong>Anyone with the link</strong>.</li>
+          <li>الصق المفتاح هنا ثم اضغط <strong>بدء الفحص</strong>.</li>
+        </ol>
+      </div>
     </div>
 
     <p id="backup-status" class="backup-status" aria-live="polite"></p>
@@ -1587,6 +1910,52 @@ function renderBackupPanel() {
 
   backupPanelEl.querySelector('[data-backup="clear"]')?.addEventListener("click", () => {
     openClearDataModal();
+  });
+
+  backupPanelEl.querySelector('[data-drive="scan"]')?.addEventListener("click", async () => {
+    const folderInput = backupPanelEl.querySelector("#drive-folder-link");
+    const apiKeyInput = backupPanelEl.querySelector("#drive-api-key");
+    const resultsEl = backupPanelEl.querySelector("#drive-audit-results");
+    const folderValue = (folderInput?.value || "").trim();
+    const apiKey = (apiKeyInput?.value || "").trim();
+    const folderId = extractGoogleDriveFolderId(folderValue);
+
+    if (!folderId) {
+      statusEl.textContent = "❌ رابط مجلد Google Drive غير صالح. أدخل رابطًا صحيحًا أو معرف المجلد مباشرة.";
+      return;
+    }
+    if (!apiKey) {
+      statusEl.textContent = "❌ أدخل Google API Key ليتمكن النظام من قراءة الملفات داخل Google Drive.";
+      return;
+    }
+
+    saveDriveLink(folderValue);
+    statusEl.textContent = "⏳ جارٍ فحص المجلدات والملفات... قد يستغرق ذلك بعض الوقت.";
+    if (resultsEl) resultsEl.innerHTML = "";
+
+    try {
+      const audit = await runDriveAudit(folderId, apiKey);
+      state.driveAudit = audit;
+      if (resultsEl) resultsEl.innerHTML = buildDriveAuditHtml(audit);
+      statusEl.textContent = "✅ اكتمل الفحص بنجاح. تم تحديث تقرير التحقق من ملفات Google Drive.";
+    } catch (error) {
+      statusEl.textContent = `❌ تعذر إكمال الفحص: ${error.message || "تأكد من مشاركة المجلد وأن API Key مفعّل لخدمة Google Drive API."}`;
+    }
+  });
+
+  const driveHelpOverlay = backupPanelEl.querySelector("#drive-help-overlay");
+  const openDriveHelp = () => driveHelpOverlay?.classList.add("active");
+  const closeDriveHelp = () => driveHelpOverlay?.classList.remove("active");
+
+  backupPanelEl.querySelector('[data-drive="help"]')?.addEventListener("click", openDriveHelp);
+  backupPanelEl.querySelector('[data-drive="close-help"]')?.addEventListener("click", closeDriveHelp);
+  driveHelpOverlay?.addEventListener("click", (event) => {
+    if (event.target === driveHelpOverlay) closeDriveHelp();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && driveHelpOverlay?.classList.contains("active")) {
+      closeDriveHelp();
+    }
   });
 }
 
