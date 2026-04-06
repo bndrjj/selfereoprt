@@ -1598,10 +1598,8 @@ function escapeRegex(text) {
 }
 
 function normalizeFileNameForAudit(fileName) {
-  return normalizeDigits(fileName)
+  return String(fileName || "")
     .replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, "")
-    .replace(/[‐‑‒–—−]/g, "-")
-    .replace(/\s*-\s*/g, "-")
     .trim();
 }
 
@@ -1610,15 +1608,15 @@ function evaluateIndicatorFiles(indicator, files) {
   const normalizedMap = new Map();
   const duplicates = [];
   const invalidFormat = [];
-  const invalidExt = [];
+  let ignoredNonPdf = 0;
   const invalidPrefix = [];
 
   for (const file of files) {
     const rawName = (file.name || "").trim();
     const normalizedName = normalizeFileNameForAudit(rawName);
-    const extMatch = normalizedName.match(/^(.*)\.pdf$/i);
+    const extMatch = normalizedName.match(/^(.*)\.pdf$/);
     if (!extMatch) {
-      invalidExt.push(rawName);
+      ignoredNonPdf += 1;
       continue;
     }
     const base = extMatch[1];
@@ -1659,7 +1657,7 @@ function evaluateIndicatorFiles(indicator, files) {
     missing,
     duplicates,
     invalidFormat,
-    invalidExt,
+    ignoredNonPdf,
     invalidPrefix,
     unexpected
   };
@@ -1780,7 +1778,7 @@ function buildDriveAuditHtml(audit) {
       if (missing.length) notes.push(`أسماء ناقصة: ${missing.join("، ")}`);
       if (details.invalidFormat?.length) notes.push(`تنسيق اسم خاطئ: ${details.invalidFormat.length} (الصيغة الصحيحة: 1-1-1-1-a-1.pdf)`);
       if (details.invalidPrefix?.length) notes.push(`أسماء تخص مؤشرًا مختلفًا: ${details.invalidPrefix.length}`);
-      if (details.invalidExt?.length) notes.push(`ملفات ليست PDF: ${details.invalidExt.length}`);
+      if (details.ignoredNonPdf) notes.push(`تم تجاهل ملفات غير PDF: ${details.ignoredNonPdf}`);
       return `<tr>
         <td>${safeHtml(row.indicatorId)}</td>
         <td>${safeHtml(row.domainName)} / ${safeHtml(row.standardName)}</td>
