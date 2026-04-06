@@ -1525,6 +1525,16 @@ function extractLeadingCode(value) {
   return match?.[1] || "";
 }
 
+function detectFolderLevel(folderName) {
+  const code = extractLeadingCode(folderName);
+  if (!code) return "unknown";
+  const segments = code.split("-").length;
+  if (segments === 1) return "domain";
+  if (segments === 2) return "standard";
+  if (segments === 4) return "indicator";
+  return "unknown";
+}
+
 function findChildFolder(children, expectedId, expectedName) {
   const normalizedExpectedName = normalizeDriveName(expectedName);
   const normalizedExpectedId = normalizeDriveName(expectedId);
@@ -1567,7 +1577,7 @@ function evaluateIndicatorFiles(indicator, files) {
       continue;
     }
     const base = lowerName.slice(0, -4).replace(/\s*-\s*/g, "-");
-    const match = base.match(/^(\d-\d-\d-\d)-(a|b)-(\d+)$/i);
+    const match = base.match(/^(\d-\d-\d-\d)-(a|b)-(\d+)$/);
     if (!match) {
       invalidFormat.push(rawName);
       continue;
@@ -1619,12 +1629,27 @@ async function runDriveAudit(rootFolderId, apiKey) {
     completedAt: null,
     rootFolderId,
     summary: { indicators: 0, complete: 0, partial: 0, missing: 0 },
+    hints: [],
     rows: []
   };
 
   const domainReports = [];
   const rootFolder = await fetchDriveItem(rootFolderId, apiKey);
   const rootChildren = await fetchDriveChildren(rootFolderId, apiKey);
+  const rootLevel = detectFolderLevel(rootFolder?.name || "");
+  if (rootLevel === "standard") {
+    result.hints.push("تنبيه: الرابط يشير غالبًا إلى مجلد معيار. الأفضل استخدام رابط المجلد الأعلى الذي يحتوي مجلدات المجالات (1، 2، 3، 4).");
+  } else if (rootLevel === "indicator") {
+    result.hints.push("تنبيه: الرابط يشير غالبًا إلى مجلد مؤشر مفرد. الأفضل استخدام رابط المجلد الأعلى الذي يحتوي مجلدات المجالات (1، 2، 3، 4).");
+  }
+
+  const anyDomainAtRoot = domains.some((domain) =>
+    findChildFolder(rootChildren, String(domain.id), domain.name)
+  );
+  if (!anyDomainAtRoot && rootLevel !== "domain") {
+    result.hints.push("لم يتم العثور على مجلدات المجالات في المستوى الحالي للرابط. تأكد أنك وضعت رابط المجلد الرئيسي الصحيح.");
+  }
+
   for (const domain of domains) {
     const domainFolder = findChildFolder([rootFolder], String(domain.id), domain.name)
       || findChildFolder(rootChildren, String(domain.id), domain.name);
@@ -1710,7 +1735,7 @@ function buildDriveAuditHtml(audit) {
       const notes = [];
       if (details.reason) notes.push(details.reason);
       if (missing.length) notes.push(`أسماء ناقصة: ${missing.join("، ")}`);
-      if (details.invalidFormat?.length) notes.push(`تنسيق اسم خاطئ: ${details.invalidFormat.length}`);
+      if (details.invalidFormat?.length) notes.push(`تنسيق اسم خاطئ: ${details.invalidFormat.length} (الصيغة الصحيحة: 1-1-1-1-a-1.pdf)`);
       if (details.invalidExt?.length) notes.push(`ملفات ليست PDF: ${details.invalidExt.length}`);
       return `<tr>
         <td>${safeHtml(row.indicatorId)}</td>
@@ -1721,8 +1746,12 @@ function buildDriveAuditHtml(audit) {
       </tr>`;
     })
     .join("");
+  const hintsHtml = (audit.hints || []).length
+    ? `<div class="drive-summary drive-summary-hints">${audit.hints.map((hint) => `<span>${safeHtml(hint)}</span>`).join("")}</div>`
+    : "";
 
   return `
+    ${hintsHtml}
     <div class="drive-summary">
       <span>إجمالي المؤشرات: <strong>${audit.summary.indicators}</strong></span>
       <span>مكتمل: <strong>${audit.summary.complete}</strong></span>
