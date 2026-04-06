@@ -1561,6 +1561,18 @@ function expectedFilesForIndicator(indicator) {
   return expected;
 }
 
+function escapeRegex(text) {
+  return String(text || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeFileNameForAudit(fileName) {
+  return normalizeDigits(fileName)
+    .replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, "")
+    .replace(/[‐‑‒–—−]/g, "-")
+    .replace(/\s*-\s*/g, "-")
+    .trim();
+}
+
 function evaluateIndicatorFiles(indicator, files) {
   const expected = expectedFilesForIndicator(indicator);
   const normalizedMap = new Map();
@@ -1571,24 +1583,23 @@ function evaluateIndicatorFiles(indicator, files) {
 
   for (const file of files) {
     const rawName = (file.name || "").trim();
-    const lowerName = normalizeDigits(rawName).toLowerCase();
-    if (!lowerName.endsWith(".pdf")) {
+    const normalizedName = normalizeFileNameForAudit(rawName);
+    const extMatch = normalizedName.match(/^(.*)\.pdf$/i);
+    if (!extMatch) {
       invalidExt.push(rawName);
       continue;
     }
-    const base = lowerName.slice(0, -4).replace(/\s*-\s*/g, "-");
-    const match = base.match(/^(\d-\d-\d-\d)-(a|b)-(\d+)$/);
+    const base = extMatch[1];
+    const pattern = new RegExp(`^(${escapeRegex(indicator.id)})-(a|b)-([1-9]\\d*)$`);
+    const match = base.match(pattern);
     if (!match) {
-      invalidFormat.push(rawName);
+      const sameStructure = base.match(/^(\d+(?:-\d+){3})-(a|b)-([1-9]\d*)$/);
+      if (sameStructure && sameStructure[1] !== indicator.id) invalidPrefix.push(rawName);
+      else invalidFormat.push(rawName);
       continue;
     }
-    const prefix = match[1];
     const suffix = match[2].toLowerCase();
     const index = Number(match[3]);
-    if (prefix !== indicator.id) {
-      invalidPrefix.push(rawName);
-      continue;
-    }
     const code = `${indicator.id}-${suffix}-${index}`;
     if (normalizedMap.has(code)) {
       duplicates.push(rawName);
@@ -1736,6 +1747,7 @@ function buildDriveAuditHtml(audit) {
       if (details.reason) notes.push(details.reason);
       if (missing.length) notes.push(`أسماء ناقصة: ${missing.join("، ")}`);
       if (details.invalidFormat?.length) notes.push(`تنسيق اسم خاطئ: ${details.invalidFormat.length} (الصيغة الصحيحة: 1-1-1-1-a-1.pdf)`);
+      if (details.invalidPrefix?.length) notes.push(`أسماء تخص مؤشرًا مختلفًا: ${details.invalidPrefix.length}`);
       if (details.invalidExt?.length) notes.push(`ملفات ليست PDF: ${details.invalidExt.length}`);
       return `<tr>
         <td>${safeHtml(row.indicatorId)}</td>
