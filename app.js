@@ -1491,12 +1491,62 @@ async function fetchDriveChildren(folderId, apiKey) {
   return data.files || [];
 }
 
+async function fetchDriveItem(itemId, apiKey) {
+  const params = new URLSearchParams({
+    fields: "id,name,mimeType,webViewLink",
+    supportsAllDrives: "true",
+    includeItemsFromAllDrives: "true",
+    key: apiKey
+  });
+  const response = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(itemId)}?${params.toString()}`);
+  const data = await response.json();
+  if (!response.ok) {
+    const details = data?.error?.message || "تعذر قراءة بيانات المجلد المحدد من Google Drive.";
+    throw new Error(details);
+  }
+  return data;
+}
+
+function normalizeDigits(value) {
+  return String(value || "").replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)));
+}
+
+function normalizeDriveName(value) {
+  return normalizeDigits(value)
+    .replace(/[‐‑‒–—−]/g, "-")
+    .replace(/\s*-\s*/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractLeadingCode(value) {
+  const normalized = normalizeDriveName(value);
+  const match = normalized.match(/^(\d+(?:-\d+){0,3})\b/);
+  return match?.[1] || "";
+}
+
+function detectFolderLevel(folderName) {
+  const code = extractLeadingCode(folderName);
+  if (!code) return "unknown";
+  const segments = code.split("-").length;
+  if (segments === 1) return "domain";
+  if (segments === 2) return "standard";
+  if (segments === 4) return "indicator";
+  return "unknown";
+}
+
 function findChildFolder(children, expectedId, expectedName) {
-  const normalizedName = (expectedName || "").trim();
+  const normalizedExpectedName = normalizeDriveName(expectedName);
+  const normalizedExpectedId = normalizeDriveName(expectedId);
   return children.find((item) => {
     if (item.mimeType !== "application/vnd.google-apps.folder") return false;
-    const name = (item.name || "").trim();
-    return name === normalizedName || name.startsWith(`${expectedId} `) || name.startsWith(`${expectedId}-`) || name === expectedId;
+    const normalizedName = normalizeDriveName(item.name);
+    const leadingCode = extractLeadingCode(item.name);
+    return (
+      normalizedName === normalizedExpectedName ||
+      normalizedName === normalizedExpectedId ||
+      leadingCode === normalizedExpectedId
+    );
   });
 }
 
@@ -1511,6 +1561,18 @@ function expectedFilesForIndicator(indicator) {
   return expected;
 }
 
+function escapeRegex(text) {
+  return String(text || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeFileNameForAudit(fileName) {
+  return normalizeDigits(fileName)
+    .replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, "")
+    .replace(/[‐‑‒–—−]/g, "-")
+    .replace(/\s*-\s*/g, "-")
+    .trim();
+}
+
 function evaluateIndicatorFiles(indicator, files) {
   const expected = expectedFilesForIndicator(indicator);
   const normalizedMap = new Map();
@@ -1521,24 +1583,23 @@ function evaluateIndicatorFiles(indicator, files) {
 
   for (const file of files) {
     const rawName = (file.name || "").trim();
-    const lowerName = rawName.toLowerCase();
-    if (!lowerName.endsWith(".pdf")) {
+    const normalizedName = normalizeFileNameForAudit(rawName);
+    const extMatch = normalizedName.match(/^(.*)\.pdf$/i);
+    if (!extMatch) {
       invalidExt.push(rawName);
       continue;
     }
-    const base = rawName.slice(0, -4);
-    const match = base.match(/^(\d-\d-\d-\d)-(a|b)-(\d+)$/i);
+    const base = extMatch[1];
+    const pattern = new RegExp(`^(${escapeRegex(indicator.id)})-(a|b)-([1-9]\\d*)$`);
+    const match = base.match(pattern);
     if (!match) {
-      invalidFormat.push(rawName);
+      const sameStructure = base.match(/^(\d+(?:-\d+){3})-(a|b)-([1-9]\d*)$/);
+      if (sameStructure && sameStructure[1] !== indicator.id) invalidPrefix.push(rawName);
+      else invalidFormat.push(rawName);
       continue;
     }
-    const prefix = match[1];
     const suffix = match[2].toLowerCase();
     const index = Number(match[3]);
-    if (prefix !== indicator.id) {
-      invalidPrefix.push(rawName);
-      continue;
-    }
     const code = `${indicator.id}-${suffix}-${index}`;
     if (normalizedMap.has(code)) {
       duplicates.push(rawName);
@@ -1579,13 +1640,30 @@ async function runDriveAudit(rootFolderId, apiKey) {
     completedAt: null,
     rootFolderId,
     summary: { indicators: 0, complete: 0, partial: 0, missing: 0 },
+    hints: [],
     rows: []
   };
 
   const domainReports = [];
+  const rootFolder = await fetchDriveItem(rootFolderId, apiKey);
+  const rootChildren = await fetchDriveChildren(rootFolderId, apiKey);
+  const rootLevel = detectFolderLevel(rootFolder?.name || "");
+  if (rootLevel === "standard") {
+    result.hints.push("تنبيه: الرابط يشير غالبًا إلى مجلد معيار. الأفضل استخدام رابط المجلد الأعلى الذي يحتوي مجلدات المجالات (1، 2، 3، 4).");
+  } else if (rootLevel === "indicator") {
+    result.hints.push("تنبيه: الرابط يشير غالبًا إلى مجلد مؤشر مفرد. الأفضل استخدام رابط المجلد الأعلى الذي يحتوي مجلدات المجالات (1، 2، 3، 4).");
+  }
+
+  const anyDomainAtRoot = domains.some((domain) =>
+    findChildFolder(rootChildren, String(domain.id), domain.name)
+  );
+  if (!anyDomainAtRoot && rootLevel !== "domain") {
+    result.hints.push("لم يتم العثور على مجلدات المجالات في المستوى الحالي للرابط. تأكد أنك وضعت رابط المجلد الرئيسي الصحيح.");
+  }
+
   for (const domain of domains) {
-    const domainChildren = await fetchDriveChildren(rootFolderId, apiKey);
-    const domainFolder = findChildFolder(domainChildren, String(domain.id), domain.name);
+    const domainFolder = findChildFolder([rootFolder], String(domain.id), domain.name)
+      || findChildFolder(rootChildren, String(domain.id), domain.name);
 
     for (const standard of domain.standards) {
       for (const indicator of standard.indicators) {
@@ -1668,7 +1746,8 @@ function buildDriveAuditHtml(audit) {
       const notes = [];
       if (details.reason) notes.push(details.reason);
       if (missing.length) notes.push(`أسماء ناقصة: ${missing.join("، ")}`);
-      if (details.invalidFormat?.length) notes.push(`تنسيق اسم خاطئ: ${details.invalidFormat.length}`);
+      if (details.invalidFormat?.length) notes.push(`تنسيق اسم خاطئ: ${details.invalidFormat.length} (الصيغة الصحيحة: 1-1-1-1-a-1.pdf)`);
+      if (details.invalidPrefix?.length) notes.push(`أسماء تخص مؤشرًا مختلفًا: ${details.invalidPrefix.length}`);
       if (details.invalidExt?.length) notes.push(`ملفات ليست PDF: ${details.invalidExt.length}`);
       return `<tr>
         <td>${safeHtml(row.indicatorId)}</td>
@@ -1679,8 +1758,12 @@ function buildDriveAuditHtml(audit) {
       </tr>`;
     })
     .join("");
+  const hintsHtml = (audit.hints || []).length
+    ? `<div class="drive-summary drive-summary-hints">${audit.hints.map((hint) => `<span>${safeHtml(hint)}</span>`).join("")}</div>`
+    : "";
 
   return `
+    ${hintsHtml}
     <div class="drive-summary">
       <span>إجمالي المؤشرات: <strong>${audit.summary.indicators}</strong></span>
       <span>مكتمل: <strong>${audit.summary.complete}</strong></span>
