@@ -1817,12 +1817,53 @@ function renderBackupPanel() {
           <label class="drive-label" for="drive-api-key">Google API Key</label>
           <input id="drive-api-key" class="drive-input" type="password" placeholder="AIza..." />
         </div>
+        <div class="backup-actions backup-actions-drive-help">
+          <button class="backup-btn backup-btn-outline" data-drive="help">
+            <span class="btn-icon">🧭</span><span>المساعدة للحصول على المفتاح API</span>
+          </button>
+        </div>
         <div class="backup-actions backup-actions-drive">
           <button class="backup-btn backup-btn-primary" data-drive="scan">
             <span class="btn-icon">🔍</span><span>بدء الفحص</span>
           </button>
         </div>
         <div id="drive-audit-results">${buildDriveAuditHtml(state.driveAudit)}</div>
+      </div>
+    </div>
+
+    <div class="drive-help-overlay" id="drive-help-overlay" role="dialog" aria-modal="true" aria-labelledby="driveHelpTitle">
+      <div class="drive-help-box">
+        <button class="drive-help-close" type="button" data-drive="close-help" aria-label="إغلاق">×</button>
+        <h3 class="drive-help-title" id="driveHelpTitle">المساعدة للحصول على Google API Key</h3>
+        <p class="drive-help-intro">
+          اتبع هذه الخطوات المختصرة لتمكين الفحص من قراءة محتويات Google Drive.
+        </p>
+        <ol class="drive-help-steps">
+          <li>
+            ادخل إلى
+            <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer">Google Cloud Console</a>
+            وسجّل الدخول بحساب Google.
+          </li>
+          <li>أنشئ مشروعًا جديدًا من أعلى الصفحة (أو استخدم مشروعًا موجودًا).</li>
+          <li>
+            من قائمة <strong>APIs & Services</strong> اختر <strong>Library</strong> ثم ابحث عن
+            <strong>Google Drive API</strong> واضغط <strong>Enable</strong>.
+          </li>
+          <li>
+            انتقل إلى <strong>Credentials</strong> ثم اضغط <strong>Create Credentials</strong> واختر
+            <strong>API key</strong>.
+          </li>
+          <li>انسخ المفتاح الذي يبدأ غالبًا بـ <code>AIza...</code>.</li>
+          <li>
+            (اختياري موصى به) اضبط قيود المفتاح:
+            <ul>
+              <li>Application restrictions (HTTP referrers لموقعك).</li>
+              <li>API restrictions واختر Google Drive API فقط.</li>
+            </ul>
+          </li>
+          <li>تأكد أن مجلد Google Drive المطلوب فحصه مشارك كـ <strong>Anyone with the link</strong>.</li>
+          <li>الصق المفتاح هنا ثم اضغط <strong>بدء الفحص</strong>.</li>
+        </ol>
       </div>
     </div>
 
@@ -1899,6 +1940,21 @@ function renderBackupPanel() {
       statusEl.textContent = "✅ اكتمل الفحص بنجاح. تم تحديث تقرير التحقق من ملفات Google Drive.";
     } catch (error) {
       statusEl.textContent = `❌ تعذر إكمال الفحص: ${error.message || "تأكد من مشاركة المجلد وأن API Key مفعّل لخدمة Google Drive API."}`;
+    }
+  });
+
+  const driveHelpOverlay = backupPanelEl.querySelector("#drive-help-overlay");
+  const openDriveHelp = () => driveHelpOverlay?.classList.add("active");
+  const closeDriveHelp = () => driveHelpOverlay?.classList.remove("active");
+
+  backupPanelEl.querySelector('[data-drive="help"]')?.addEventListener("click", openDriveHelp);
+  backupPanelEl.querySelector('[data-drive="close-help"]')?.addEventListener("click", closeDriveHelp);
+  driveHelpOverlay?.addEventListener("click", (event) => {
+    if (event.target === driveHelpOverlay) closeDriveHelp();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && driveHelpOverlay?.classList.contains("active")) {
+      closeDriveHelp();
     }
   });
 }

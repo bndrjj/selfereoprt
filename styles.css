@@ -977,6 +977,11 @@ select {
   margin-bottom: 0.8rem;
 }
 
+.backup-actions-drive-help {
+  grid-template-columns: 1fr;
+  margin-bottom: 0.6rem;
+}
+
 .drive-summary {
   display: flex;
   flex-wrap: wrap;
@@ -1035,6 +1040,81 @@ select {
 .drive-status-miss {
   background: #fee2e2;
   color: #b42323;
+}
+
+.drive-help-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 24, 48, 0.58);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.drive-help-overlay.active {
+  display: flex;
+}
+
+.drive-help-box {
+  width: min(780px, 100%);
+  max-height: 88vh;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #d4def6;
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(14, 30, 71, 0.32);
+  padding: 1rem 1rem 1.1rem;
+  position: relative;
+}
+
+.drive-help-close {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  border: none;
+  background: transparent;
+  font-size: 1.7rem;
+  color: #4a5e8e;
+  cursor: pointer;
+}
+
+.drive-help-title {
+  margin: 0 0 0.45rem;
+  color: #1f3766;
+  font-size: 1.05rem;
+}
+
+.drive-help-intro {
+  margin: 0 0 0.7rem;
+  color: #475569;
+  font-size: 0.92rem;
+}
+
+.drive-help-steps {
+  margin: 0;
+  padding-inline-start: 1.1rem;
+  display: grid;
+  gap: 0.45rem;
+  color: #1e293b;
+  line-height: 1.75;
+  font-size: 0.9rem;
+}
+
+.drive-help-steps ul {
+  margin: 0.2rem 0 0;
+  padding-inline-start: 1rem;
+}
+
+.drive-help-steps a {
+  color: #245fbe;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.drive-help-steps a:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 500px) {
