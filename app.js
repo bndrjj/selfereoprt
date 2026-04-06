@@ -1519,6 +1519,39 @@ function normalizeDriveName(value) {
     .trim();
 }
 
+function normalizeArabicLabel(value) {
+  return normalizeDriveName(value)
+    .replace(/[\u064b-\u065f\u0670]/g, "")
+    .replace(/ـ/g, "")
+    .replace(/[.,،؛:!?؟()"“”'`]/g, " ")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function tokenSimilarity(actual, expected) {
+  const actualTokens = new Set(normalizeArabicLabel(actual).split(" ").filter((token) => token.length > 1));
+  const expectedTokens = new Set(normalizeArabicLabel(expected).split(" ").filter((token) => token.length > 1));
+  if (!actualTokens.size || !expectedTokens.size) return 0;
+  let common = 0;
+  expectedTokens.forEach((token) => {
+    if (actualTokens.has(token)) common += 1;
+  });
+  return common / expectedTokens.size;
+}
+
+function isLikelySameFolderName(actualName, expectedName) {
+  const actual = normalizeArabicLabel(actualName);
+  const expected = normalizeArabicLabel(expectedName);
+  if (!actual || !expected) return false;
+  if (actual === expected) return true;
+  if (actual.includes(expected) || expected.includes(actual)) {
+    return Math.min(actual.length, expected.length) >= 8;
+  }
+  return tokenSimilarity(actual, expected) >= 0.72;
+}
+
 function extractLeadingCode(value) {
   const normalized = normalizeDriveName(value);
   const match = normalized.match(/^(\d+(?:-\d+){0,3})\b/);
@@ -1536,16 +1569,15 @@ function detectFolderLevel(folderName) {
 }
 
 function findChildFolder(children, expectedId, expectedName) {
-  const normalizedExpectedName = normalizeDriveName(expectedName);
   const normalizedExpectedId = normalizeDriveName(expectedId);
   return children.find((item) => {
     if (item.mimeType !== "application/vnd.google-apps.folder") return false;
     const normalizedName = normalizeDriveName(item.name);
     const leadingCode = extractLeadingCode(item.name);
     return (
-      normalizedName === normalizedExpectedName ||
       normalizedName === normalizedExpectedId ||
-      leadingCode === normalizedExpectedId
+      leadingCode === normalizedExpectedId ||
+      isLikelySameFolderName(item.name, expectedName)
     );
   });
 }
